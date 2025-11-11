@@ -1,0 +1,196 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(to bottom right, #f3e8ff, #ffe4f0, #dbeafe);
+  margin: 0;
+  padding: 0;
+}
+
+/* Навигация */
+nav {
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(to bottom right, #9333ea, #ec4899);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-text {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(to right, #9333ea, #ec4899);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Главен контейнер */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* Карти и бутони */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+  align-items: center;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 24px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e1e1e;
+  margin-bottom: 6px;
+}
+
+.card p {
+  color: #555;
+}
+
+/* Икони в картите */
+.icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.icon-purple {
+  background: linear-gradient(to bottom right, #ede9fe, #fce7f3);
+  color: #7c3aed;
+}
+
+.icon-blue {
+  background: linear-gradient(to bottom right, #e0f2fe, #cffafe);
+  color: #2563eb;
+}
+
+.icon-green {
+  background: linear-gradient(to bottom right, #dcfce7, #bbf7d0);
+  color: #059669;
+}
+
+/* Hero секция */
+.hero {
+  background: linear-gradient(to bottom right, #8b5cf6, #ec4899, #fb923c);
+  color: white;
+  padding: 40px;
+  border-radius: 28px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.hero h1 {
+  font-size: 32px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.hero p {
+  font-size: 18px;
+}
+
+/* Контактна секция */
+.contact {
+  background: linear-gradient(to right, #eff6ff, #faf5ff);
+  border: 2px solid #bfdbfe;
+  border-radius: 20px;
+  padding: 32px;
+  margin-top: 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.contact-icon {
+  background: #3b82f6;
+  color: white;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 8px;
+}
+
+.contact p {
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 22px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contact {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
