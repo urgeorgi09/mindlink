@@ -1,9 +1,15 @@
+// models/models.js - ИЗЧИСТЕНА ВЕРСИЯ
+
 import mongoose from 'mongoose';
 
-const emotionPostSchema = new mongoose.Schema({
+// ⚠️ МАХАМЕ EmotionPost и оставяме САМО Emotion
+// Защото EmotionShare използва mood/energy/note
+
+const EmotionSchema = new mongoose.Schema({
   userId: { type: String, required: true },
-  text: { type: String, required: true },
-  emotion: { type: Number, required: true, min: 1, max: 5 },
+  mood: { type: Number, required: true, min: 1, max: 5 },
+  energy: { type: Number, required: true, min: 1, max: 5 },
+  note: { type: String, default: "" },
   timestamp: { type: Date, default: Date.now }
 });
 
@@ -33,7 +39,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export const EmotionPost = mongoose.model('EmotionPost', emotionPostSchema);
+// ✅ ЕКСПОРТИРАМЕ САМО Emotion (не EmotionPost)
+export const Emotion = mongoose.model("Emotion", EmotionSchema);
 export const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
 export const Therapist = mongoose.model('Therapist', therapistSchema);
-export const User = mongoose.model('User', userSchema);

@@ -3,16 +3,18 @@ import { Box, Typography, Paper, TextField, Button, Container, Avatar, IconButto
 import { MessageCircle, Send, Bot, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getChatMessages, sendChatMessage } from '../api';
+import { useAnonymous } from "../context/AnonymousContext";
 
 // Helper to call backend Hugging Face endpoint
 async function fetchAiReply(message) {
-  const response = await fetch('http://localhost:5000/api/hf-chat', {
+  const response = await fetch('http://localhost:5000/api/chat/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ message }),
   });
+
   const result = await response.json();
   if (result.reply) return result.reply;
   throw new Error(result.error || 'AI reply error');
@@ -85,8 +87,7 @@ export default function AiChat() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // TODO: Replace with actual user ID after adding authentication
-  const userId = 'temp-user-id';
+  const { userId } = useAnonymous();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

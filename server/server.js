@@ -1,137 +1,201 @@
-// Hugging Face Mistral-7B-Instruct chat endpoint
-import fetch from 'node-fetch';
+// server.js — ПОПРАВЕНА ВЕРСИЯ
 
-app.post('/api/hf-chat', async (req, res) => {
-  try {
-    const { message } = req.body;
-    const HF_API_KEY = process.env.HF_API_KEY;
-    if (!HF_API_KEY) {
-      return res.status(500).json({ error: 'Hugging Face API key not set in .env (HF_API_KEY)' });
-    }
-    const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ inputs: message }),
-    });
-    const result = await response.json();
-    if (Array.isArray(result) && result[0]?.generated_text) {
-      res.json({ reply: result[0].generated_text });
-    } else {
-      res.status(500).json({ error: 'No reply from Hugging Face API', details: result });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { EmotionPost, ChatMessage, Therapist, User } from './models.js';
+import express from "express";
+import axios from "axios";
+import cors from "cors";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+import { Emotion, ChatMessage, Therapist } from "./models/models.js";
+import User from "./models/User.js";
+
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// ---------------------
+// CORS
+// ---------------------
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+  allowedHeaders: ["Content-Type", "X-User-Id"]
+}));
+
+// ---------------------
+// Парсване на JSON
+// ---------------------
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// ---------------------
+// Simple logger
+// ---------------------
+app.use((req, res, next) => {
+  const userId = req.header("X-User-Id") || req.ip;
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} | User: ${userId}`);
+  next();
+});
 
-// Emotion Posts Routes
-app.get('/api/emotions', async (req, res) => {
+// ---------------------
+// AI Chat (OpenRouter)
+// ---------------------
+app.post("/api/chat/ai", async (req, res) => {
+  const userId = req.header("X-User-Id") || req.ip;
+  const { message } = req.body || {};
+
+  if (!message) return res.status(400).json({ error: "Missing message" });
+
   try {
-    const posts = await EmotionPost.find().sort({ timestamp: -1 });
-    res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Ти си MindLink — AI терапевт, който говори само на български. Бъди кратък, човешки и емпатичен.",
+          },
+          { role: "user", content: message },
+        ],
+        temperature: 0.8,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        }
+      }
+    );
+
+    let aiReply =
+      response.data?.choices?.[0]?.message?.content ||
+      response.data?.generated_text ||
+      "🤖 Няма отговор.";
+
+    aiReply = aiReply.replace(/<s>|<\/s>/g, "").trim();
+
+    res.json({ reply: aiReply });
+  } catch (err) {
+    res.status(500).json({ error: "AI error", details: err.message });
   }
 });
 
-app.post('/api/emotions', async (req, res) => {
+// ---------------------
+// Save chat message
+// ---------------------
+app.post("/api/chat", async (req, res) => {
   try {
-    const post = new EmotionPost(req.body);
-    await post.save();
-    res.status(201).json(post);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    const userId = req.header("X-User-Id") || req.ip;
+    const msg = new ChatMessage({ ...req.body, userId });
+    await msg.save();
+    res.status(201).json(msg);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
-// Chat Messages Routes
-app.get('/api/chat/:userId', async (req, res) => {
+// ---------------------
+// Load chat history
+// ---------------------
+app.get("/api/chat/:userId", async (req, res) => {
   try {
-    const messages = await ChatMessage.find({ userId: req.params.userId })
+    const messages = await ChatMessage
+      .find({ userId: req.params.userId })
       .sort({ timestamp: 1 });
+
     res.json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/chat', async (req, res) => {
+// ---------------------
+// ✅ EMOTIONS - ПОПРАВЕНО
+// ---------------------
+app.get("/api/emotions/:userId", async (req, res) => {
   try {
-    const message = new ChatMessage(req.body);
-    await message.save();
-    res.status(201).json(message);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    const emotions = await Emotion
+      .find({ userId: req.params.userId })
+      .sort({ timestamp: -1 });
+
+    res.json(emotions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Therapists Routes
-app.get('/api/therapists', async (req, res) => {
+app.post("/api/emotions", async (req, res) => {
+  try {
+    const userId = req.header("X-User-Id") || req.ip;
+    
+    // ✅ Приемаме mood, energy, note от фронтенда
+    const { mood, energy, note } = req.body;
+
+    if (!mood || !energy) {
+      return res.status(400).json({ error: "mood and energy are required" });
+    }
+
+    const emotion = new Emotion({
+      userId,
+      mood: Number(mood),
+      energy: Number(energy),
+      note: note || ""
+    });
+
+    await emotion.save();
+    
+    console.log("✅ Saved emotion:", emotion);
+    
+    res.status(201).json(emotion);
+  } catch (err) {
+    console.error("❌ Error saving emotion:", err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ---------------------
+// Therapists Catalog
+// ---------------------
+app.get("/api/therapists", async (req, res) => {
   try {
     const { city, specialty, search } = req.query;
+
     let query = {};
-    
-    if (city && city !== 'Всички градове') {
-      query.city = city;
-    }
-    if (specialty && specialty !== 'Всички специалности') {
-      query.specialty = specialty;
-    }
+
+    if (city && city !== "Всички градове") query.city = city;
+    if (specialty && specialty !== "Всички специалности") query.specialty = specialty;
+
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { expertise: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { expertise: { $regex: search, $options: "i" } }
       ];
     }
-    
+
     const therapists = await Therapist.find(query);
     res.json(therapists);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/therapists', async (req, res) => {
-  try {
-    const therapist = new Therapist(req.body);
-    await therapist.save();
-    res.status(201).json(therapist);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// ---------------------
+// Auth routes
+// ---------------------
+app.use("/api/auth", authRoutes);
 
-// Users Routes
-app.post('/api/users', async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// ---------------------
+// CONNECT DB & START SERVER
+// ---------------------
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB error:", err));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+export default app;

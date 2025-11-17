@@ -1,9 +1,16 @@
+// src/components/EmotionShare.jsx - ПОПРАВЕНА ВЕРСИЯ
+
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, TextField, Button, Grid, Slider, Avatar, Container, Alert } from '@mui/material';
+import { 
+  Box, Typography, Paper, TextField, Button, 
+  Grid, Slider, Avatar, Container, Alert 
+} from '@mui/material';
 import { Heart, SmilePlus, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getEmotions, createEmotionPost } from '../api';
+import { useAnonymous } from "../context/AnonymousContext";
 
+// Текстове за настроение
 const emotions = {
   1: '😢 Много тъжен',
   2: '😕 Тъжен',
@@ -12,194 +19,237 @@ const emotions = {
   5: '😊 Много добре'
 };
 
+// Текстове за енергия
+const energyLevels = {
+  1: "🔋 Много ниска енергия",
+  2: "😴 Уморен",
+  3: "🙂 Нормална",
+  4: "⚡ Енергичен",
+  5: "🔥 Много енергичен"
+};
+
 export default function EmotionShare() {
+  const { userId } = useAnonymous();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
+
   const [emotionLevel, setEmotionLevel] = useState(3);
+  const [energyLevel, setEnergyLevel] = useState(3);
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch posts when component mounts
+  // Load all posts за текущия потребител
   useEffect(() => {
-    const fetchPosts = async () => {
+    if (!userId) return;  
+    
+    const load = async () => {
       try {
         setIsLoading(true);
-        const response = await getEmotions();
-        setPosts(response.data);
+        const res = await getEmotions(userId); // ✅ Подаваме userId
+        console.log("📥 Loaded posts:", res.data);
+        setPosts(res.data);
       } catch (err) {
-        setError('Грешка при зареждане на постовете. Моля, опитайте отново.');
-        console.error('Error fetching posts:', err);
+        console.error("❌ Error loading posts:", err);
+        setError("Грешка при зареждане на постовете.");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchPosts();
-  }, []);
+    load();
+  }, [userId]);
 
+  // Submit a new post
   const handlePost = async () => {
-    if (!newPost.trim()) return;
+    if (!newPost.trim()) {
+      setError("Моля, напишете нещо.");
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError('');
-      
+
+      // ✅ Изпращаме точно това, което очаква бекенда
       const post = {
-        userId: 'temp-user-id', // Replace with actual user ID after adding auth
-        text: newPost,
-        emotion: emotionLevel
+        mood: emotionLevel,
+        energy: energyLevel,
+        note: newPost
       };
 
-      const response = await createEmotionPost(post);
-      setPosts(prevPosts => [response.data, ...prevPosts]);
+      console.log("📤 Sending post:", post);
+
+      const res = await createEmotionPost(post);
+      
+      console.log("✅ Post saved:", res.data);
+
+      // ✅ Добавяме новия пост в списъка
+      setPosts(prev => [res.data, ...prev]);
+
+      // ✅ Изчистваме формата
       setNewPost('');
       setEmotionLevel(3);
+      setEnergyLevel(3);
+
     } catch (err) {
-      setError('Грешка при публикуване. Моля, опитайте отново.');
-      console.error('Error creating post:', err);
+      console.error("❌ Error posting:", err);
+      setError("Грешка при публикуване.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (!userId) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ py: 4 }}>
+          <Alert severity="warning">
+            Моля, влезте, за да споделяте емоции.
+          </Alert>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="md">
       <Box sx={{ py: 4 }}>
-        <Typography variant="h3" gutterBottom align="center" fontWeight="600" sx={{ mb: 4 }}>
+        
+        <Typography 
+          variant="h3" 
+          align="center" 
+          fontWeight="600" 
+          sx={{ mb: 4 }}
+        >
           Как се чувстваш днес?
         </Typography>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-        
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Paper 
+
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+        {/* --- Form --- */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Paper
             elevation={0}
-            sx={{ 
-              p: 4, 
-              mt: 2, 
+            sx={{
+              p: 4,
               mb: 6,
               borderRadius: 4,
-              background: 'linear-gradient(135deg, #fff 0%, #f0f7ff 100%)',
-              border: '1px solid rgba(99, 102, 241, 0.1)'
-            }}>
-            <Typography variant="h5" gutterBottom fontWeight="500" sx={{ mb: 3 }}>
+              background: "linear-gradient(135deg, #fff 0%, #f0f7ff 100%)",
+              border: "1px solid rgba(99,102,241,0.15)"
+            }}
+          >
+            {/* EMOTION SLIDER */}
+            <Typography variant="h5" fontWeight="500" sx={{ mb: 2 }}>
               {emotions[emotionLevel]}
             </Typography>
             <Slider
               value={emotionLevel}
               min={1}
               max={5}
-              step={1}
               marks
-              onChange={(_, value) => setEmotionLevel(value instanceof Array ? value[0] : value)}
-              sx={{ 
+              step={1}
+              onChange={(_, val) => setEmotionLevel(val)}
+              sx={{
                 mb: 4,
-                '& .MuiSlider-mark': {
-                  backgroundColor: '#6366f1',
-                },
-                '& .MuiSlider-track': {
-                  background: 'linear-gradient(to right, #6366f1, #ec4899)'
+                "& .MuiSlider-track": {
+                  background: "linear-gradient(to right, #6366f1, #ec4899)"
                 }
               }}
             />
+
+            {/* ENERGY SLIDER */}
+            <Typography variant="h6" fontWeight="500" sx={{ mb: 2 }}>
+              {energyLevels[energyLevel]}
+            </Typography>
+            <Slider
+              value={energyLevel}
+              min={1}
+              max={5}
+              marks
+              step={1}
+              onChange={(_, val) => setEnergyLevel(val)}
+              sx={{
+                mb: 4,
+                "& .MuiSlider-track": {
+                  background: "linear-gradient(to right, #10b981, #6366f1)"
+                }
+              }}
+            />
+
+            {/* TEXT AREA */}
             <TextField
               fullWidth
               multiline
               rows={4}
-              placeholder="Сподели своите мисли и чувства тук..."
+              placeholder="Сподели своите мисли..."
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              sx={{ 
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  backgroundColor: 'white',
-                  '&:hover': {
-                    '& > fieldset': { borderColor: 'primary.main' }
-                  }
-                }
-              }}
+              sx={{ mb: 3 }}
             />
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                variant="contained" 
-                startIcon={<Heart />}
+
+            {/* SUBMIT BUTTON */}
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Button
+                variant="contained"
                 fullWidth
                 size="large"
+                startIcon={<Heart />}
                 onClick={handlePost}
                 disabled={isLoading}
-                sx={{ 
+                sx={{
                   py: 1.5,
                   fontWeight: 600,
-                  fontSize: '1.1rem',
-                  background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)',
-                  boxShadow: '0 3px 12px rgba(99, 102, 241, 0.2)'
+                  fontSize: "1.1rem",
+                  background: "linear-gradient(45deg, #6366f1 30%, #ec4899 90%)"
                 }}
               >
-                Сподели
+                {isLoading ? "Публикуване..." : "Сподели"}
               </Button>
             </motion.div>
           </Paper>
         </motion.div>
 
+        {/* --- POSTS --- */}
         <AnimatePresence>
-          {posts.map((post, index) => (
-            <motion.div
-              key={`${post.id}-${index}`}
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+          {posts.map((post, i) => (
+            <motion.div 
+              key={post._id || i}
+              initial={{ opacity: 0, y: 50 }} 
+              animate={{ opacity: 1, y: 0 }}
             >
-              <Paper 
-                elevation={0}
-                sx={{ 
-                  p: 4, 
-                  mb: 3,
-                  borderRadius: 3,
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  '&:hover': {
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-                    transform: 'translateY(-2px)'
-                  }
-                }}>
+              <Paper sx={{ p: 4, mb: 3, borderRadius: 3 }}>
                 <Grid container spacing={3} alignItems="flex-start">
                   <Grid item>
-                    <Avatar 
-                      sx={{ 
-                        width: 56, 
-                        height: 56, 
-                        bgcolor: 'primary.light',
-                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
-                      }}>
+                    <Avatar sx={{ width: 56, height: 56, bgcolor: "primary.light" }}>
                       <SmilePlus size={28} />
                     </Avatar>
                   </Grid>
+
                   <Grid item xs>
-                    <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem', lineHeight: 1.6 }}>
-                      {post.text}
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      {post.note}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
-                      <Calendar size={16} style={{ marginRight: 8 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(post.timestamp).toLocaleString('bg-BG')} • {emotions[post.emotion]}
-                      </Typography>
-                    </Box>
+
+                    <Typography variant="body2" color="text.secondary">
+                      <Calendar size={16} style={{ marginRight: 6 }} />
+                      {new Date(post.timestamp).toLocaleString("bg-BG")}
+                    </Typography>
+
+                    <Typography sx={{ mt: 1 }}>
+                      😊 Настроение: <strong>{emotions[post.mood]}</strong>
+                    </Typography>
+
+                    <Typography>
+                      ⚡ Енергия: <strong>{energyLevels[post.energy]}</strong>
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
             </motion.div>
           ))}
         </AnimatePresence>
- </Box>
+
+      </Box>
     </Container>
   );
 }

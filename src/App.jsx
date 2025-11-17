@@ -222,6 +222,7 @@ export default function App() {
             </AppBar>
             <Box sx={{ py: 3 }}>
               <Routes>
+                
                 <Route path="/" element={<Home />} />
                 <Route path="/emotion" element={<EmotionShare />} />
                 <Route path="/chat" element={<AiChat />} />
