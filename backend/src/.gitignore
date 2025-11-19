@@ -1,9 +1,10 @@
 # Environment Variables
 .env
-*.env
 .env.local
 .env.development
 .env.production
+.env.test
+*.env
 
 # Dependencies
 node_modules/
@@ -19,32 +20,17 @@ build/
 logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# Editor directories and files
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.DS_Store
 
-# Testing
-coverage/
-.nyc_output/
-
-# Production
-*.tgz
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Database
+*.sqlite
+*.db

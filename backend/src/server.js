@@ -59,8 +59,6 @@ app.use((req, res) => {
   });
 });
 
-console.log("Loaded MONGO_URI:", process.env.MONGO_URI);
-
 // ==================== ERROR HANDLING ====================
 app.use(errorHandler);
 
