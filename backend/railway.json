@@ -1,26 +1,11 @@
-{
-  "name": "mindlink-backend",
-  "version": "1.0.0",
-  "description": "MindLink Backend API",
-  "main": "src/server.js",
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "build": "echo 'Backend build completed successfully'"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "mongoose": "^8.0.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.6.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  }
-}
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["echo 'No build step needed for backend'"]
+
+[start]
+cmd = "node src/server.js"
