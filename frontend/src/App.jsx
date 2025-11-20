@@ -10,6 +10,10 @@ import { motion } from 'framer-motion';
 
 import theme from './theme/theme';
 import ErrorBoundary from './components/ErrorBoundary';
+import BreathingExercise from './components/BreathingExercise';
+import CrisisResources from './components/CrisisResources';
+import BadgesAchievements from './components/BadgesAchievements';
+import AIJournal from './components/AIJournal';
 
 // Lazy load components
 const EmotionShare = lazy(() => import('./components/EmotionShare'));
@@ -125,34 +129,72 @@ function Navigation() {
 
 // Home Page
 function HomePage() {
-  const cards = [
-    {
-      icon: Heart,
-      title: 'Как се чувствам',
-      description: 'Сподели настроението и енергията си',
-      path: '/emotion',
-      gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(244, 114, 182, 0.2) 100%)',
-      glowColor: 'rgba(236, 72, 153, 0.3)',
-      iconColor: '#ec4899',
-    },
-    {
-      icon: MessageCircle,
-      title: 'AI помощник',
-      description: 'Поговори с AI терапевт',
-      path: '/chat',
-      gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(129, 140, 248, 0.2) 100%)',
-      glowColor: 'rgba(99, 102, 241, 0.3)',
-      iconColor: '#6366f1',
-    },
-    {
-      icon: TrendingUp,
-      title: 'Моята статистика',
-      description: 'Проследи напредъка си',
-      path: '/mood',
-      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)',
-      glowColor: 'rgba(16, 185, 129, 0.3)',
-      iconColor: '#10b981',
-    },
+   const cards = [
+  {
+    icon: Heart,
+    title: 'Как се чувствам',
+    description: 'Сподели настроението и енергията си',
+    path: '/emotion',
+    gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(244, 114, 182, 0.2) 100%)',
+    glowColor: 'rgba(236, 72, 153, 0.3)',
+    iconColor: '#ec4899',
+  },
+  {
+    icon: MessageCircle,
+    title: 'AI помощник',
+    description: 'Поговори с AI терапевт',
+    path: '/chat',
+    gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(129, 140, 248, 0.2) 100%)',
+    glowColor: 'rgba(99, 102, 241, 0.3)',
+    iconColor: '#6366f1',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Моята статистика',
+    description: 'Проследи напредъка си',
+    path: '/mood',
+    gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)',
+    glowColor: 'rgba(16, 185, 129, 0.3)',
+    iconColor: '#10b981',
+  },
+
+  // ⭐ НОВИ КАРТИ — СЪС СЪЩИЯ ДИЗАЙН ⭐
+  {
+    icon: Sparkles,
+    title: 'Дихателни упражнения',
+    description: 'Спокойно и водено дишане за намаляване на стреса',
+    path: '/breathing',
+    gradient: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(14, 165, 233, 0.2) 100%)',
+    glowColor: 'rgba(56, 189, 248, 0.35)',
+    iconColor: '#0ea5e9',
+  },
+  {
+    icon: Phone,
+    title: 'Кризисни ресурси',
+    description: 'Контакти при нужда от незабавна подкрепа',
+    path: '/crisis',
+    gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.2) 100%)',
+    glowColor: 'rgba(239, 68, 68, 0.35)',
+    iconColor: '#ef4444',
+  },
+  {
+    icon: MessageCircle,
+    title: 'AI Journal',
+    description: 'Пиши свободно и получавай подкрепа от AI',
+    path: '/journal',
+    gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%)',
+    glowColor: 'rgba(168, 85, 247, 0.35)',
+    iconColor: '#a855f7',
+  },
+  {
+    icon: Sparkles,
+    title: 'Постижения',
+    description: 'Събирай значки и следи своя напредък',
+    path: '/badges',
+    gradient: 'linear-gradient(135deg, rgba(250, 204, 21, 0.2) 0%, rgba(252, 211, 77, 0.2) 100%)',
+    glowColor: 'rgba(250, 204, 21, 0.3)',
+    iconColor: '#facc15',
+  },
   ];
 
   return (
@@ -503,6 +545,10 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/emotion" element={<EmotionShare />} />
+                <Route path="/breathing" element={<BreathingExercise />} />
+                <Route path="/crisis" element={<CrisisResources />} />
+                <Route path="/badges" element={<BadgesAchievements />} />
+                <Route path="/journal" element={<AIJournal />} />
                 <Route path="/chat" element={<AiChat />} />
                 <Route path="/mood" element={<MoodTracker />} />
                 <Route path="/therapists" element={<TherapistDirectory />} />

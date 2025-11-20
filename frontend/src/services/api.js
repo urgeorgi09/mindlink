@@ -11,11 +11,23 @@ const api = axios.create({
 });
 
 // Interceptor за добавяне на User ID
+let anonId = localStorage.getItem("anonymousId");
+
+if (!anonId) {
+  anonId = crypto.randomUUID();
+  localStorage.setItem("anonymousId", anonId);
+}
+
+// Автоматично добавяне към всички заявки
 api.interceptors.request.use((config) => {
-  const userId = localStorage.getItem('anonymousUserId');
-  if (userId) {
-    config.headers['X-User-Id'] = userId;
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    config.headers["x-anonymous-id"] = anonId;
   }
+
   return config;
 });
 
@@ -30,5 +42,13 @@ export const getAIResponse = (message) => api.post('/chat/ai', { message });
 
 // ==================== THERAPISTS ====================
 export const getTherapists = (params) => api.get('/therapists', { params });
+
+export const saveJournalEntry = (data) => {
+  return api.post("/journal", data);
+};
+
+export const getJournalEntries = () => {
+  return api.get("/journal");
+};
 
 export default api;

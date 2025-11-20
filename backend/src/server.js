@@ -8,9 +8,15 @@ import connectDB from './config/database.js';
 import { requestLogger } from './middleware/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
+import { authMiddleware } from './middleware/authMiddleware.js';
+
 import emotionRoutes from './routes/emotionRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import therapistRoutes from './routes/therapistRoutes.js';
+import journalRoutes from './routes/journalRoutes.js';
+import journalRoutes from "./routes/journalRoutes.js";
+app.use("/api/journal", journalRoutes);
+
 
 dotenv.config();
 
@@ -19,86 +25,56 @@ const app = express();
 // ==================== SECURITY ====================
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: "http://localhost:5173",
+  methods: "GET,POST,PUT,DELETE",
+  allowedHeaders: ["Content-Type", "Authorization", "x-anonymous-id"],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'X-User-Id', 'Authorization']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+// Rate limit
+app.use('/api/', rateLimit({
+  windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Твърде много заявки. Моля, изчакайте.'
-});
-app.use('/api/', limiter);
+  message: 'Твърде много заявки.'
+}));
 
 // ==================== MIDDLEWARE ====================
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
 app.use(requestLogger);
+
+// GLOBAL AUTH
+app.use(authMiddleware);
 
 // ==================== ROUTES ====================
 app.use('/api/emotions', emotionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/therapists', therapistRoutes);
+app.use('/api/journal', journalRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV
-  });
-});
+app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found'
-  });
-});
+// 404
+app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
-// ==================== ERROR HANDLING ====================
+// ERROR HANDLER
 app.use(errorHandler);
 
-// ==================== START SERVER ====================
+// ==================== SERVER ====================
 const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
+const start = async () => {
   try {
     await connectDB();
-    
-    app.listen(PORT, () => {
-      console.log(`
-╔════════════════════════════════════════╗
-║                                        ║
-║   🚀 MindLink+ Server Running          ║
-║                                        ║
-║   📡 Port: ${PORT}                     ║
-║   🌍 Environment: ${process.env.NODE_ENV || 'development'}
-║   🔗 Frontend: ${process.env.CORS_ORIGIN}
-║                                        ║
-╚════════════════════════════════════════╝
-      `);
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
 };
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('unhandledRejection', (err) => {
-  console.error('💥 Unhandled Rejection:', err);
-  process.exit(1);
-});
-
-startServer();
+start();
 
 export default app;

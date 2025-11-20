@@ -40,7 +40,7 @@ nav {
 }
 
 .logo-text {
-  font-size: 26px;
+  font-size: 4rem;
   font-weight: 800;
   background: linear-gradient(to right, #9333ea, #ec4899);
   -webkit-background-clip: text;
@@ -78,7 +78,7 @@ main {
 }
 
 .card h3 {
-  font-size: 20px;
+  font-size: 1rem;
   font-weight: 700;
   color: #030001;
   margin-bottom: 6px;
@@ -124,7 +124,7 @@ main {
 }
 
 .hero h1 {
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@ main {
 }
 
 .hero p {
-  font-size: 18px;
+  font-size: 1rem;
 }
 
 /* Контактна секция */
@@ -160,7 +160,7 @@ main {
 }
 
 .contact h3 {
-  font-size: 22px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1e3a8a;
   margin-bottom: 8px;
@@ -177,7 +177,7 @@ button {
   border: none;
   border-radius: 9999px;
   padding: 10px 22px;
-  font-size: 15px;
+  font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
 }

@@ -1,36 +1,33 @@
-import { ChatMessage } from '../models/index.js';
+import ChatMessage from '../models/ChatMessage.js';
+import UserStats from '../models/UserStats.js';
+import { checkUserBadges } from '../utils/checkUserBadges.js';
 
-// GET /api/chat/:userId - Зарежда чат историята
-export const getChatMessages = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    const messages = await ChatMessage
-      .find({ userId })
-      .sort({ timestamp: 1 });
-
-    res.json(messages);
-  } catch (err) {
-    console.error('❌ Error fetching messages:', err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// POST /api/chat - Записва ново съобщение
 export const createChatMessage = async (req, res) => {
   try {
-    const userId = req.header('X-User-Id') || req.ip;
-    
-    const msg = new ChatMessage({ 
-      ...req.body, 
-      userId 
+    const userId = req.user.id;
+    const { message, isAi = false } = req.body;
+
+    const msg = await ChatMessage.create({
+      userId,
+      message,
+      isAi
     });
-    
-    await msg.save();
-    
-    res.status(201).json(msg);
+
+    // only count user messages (not AI replies)
+    if (!isAi) {
+      await UserStats.findOneAndUpdate(
+        { userId },
+        { $inc: { chatbotMessages: 1 } },
+        { new: true, upsert: true }
+      );
+    }
+
+    // check badges
+    const newBadges = await checkUserBadges(userId);
+
+    res.status(201).json({ success: true, msg, newBadges });
   } catch (err) {
-    console.error('❌ Error creating message:', err);
-    res.status(400).json({ error: err.message });
+    console.error('Chat create error:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 };
