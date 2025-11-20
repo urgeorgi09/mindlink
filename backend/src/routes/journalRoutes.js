@@ -1,6 +1,5 @@
 import express from "express";
 import mongoose from "mongoose";
-import express from "express";
 import { createJournalEntry, getJournalEntries } from "../controllers/journalController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
