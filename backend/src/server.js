@@ -13,8 +13,8 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import emotionRoutes from './routes/emotionRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import therapistRoutes from './routes/therapistRoutes.js';
-import journalRoutes from './routes/journalRoutes.js';
 import journalRoutes from "./routes/journalRoutes.js";
+
 app.use("/api/journal", journalRoutes);
 
 
