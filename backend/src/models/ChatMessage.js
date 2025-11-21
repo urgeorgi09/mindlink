@@ -88,6 +88,5 @@ chatMessageSchema.pre('save', function(next) {
   next();
 });
 
-const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
-
-export default ChatMessage;
+export default mongoose.models.ChatMessage ||
+  mongoose.model('ChatMessage', chatMessageSchema);
