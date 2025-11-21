@@ -15,13 +15,11 @@ import chatRoutes from './routes/chatRoutes.js';
 import therapistRoutes from './routes/therapistRoutes.js';
 import journalRoutes from "./routes/journalRoutes.js";
 
-app.use("/api/journal", journalRoutes);
-
-
 dotenv.config();
 
 const app = express();
 
+app.use("/api/journal", journalRoutes);
 // ==================== SECURITY ====================
 app.use(helmet());
 app.use(cors({
