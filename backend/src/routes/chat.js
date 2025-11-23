@@ -4,11 +4,22 @@ import { getAiResponse } from '../controllers/aiController.js';
 
 const router = express.Router();
 
-// --- AI endpoint трябва да е най-горе ---
+/**
+ * POST /api/chat/ai
+ * AI endpoint - трябва да е ПРЕДИ /:userId route
+ */
 router.post('/ai', getAiResponse);
 
-// Chat
+/**
+ * GET /api/chat/:userId
+ * Зарежда чат история
+ */
 router.get('/:userId', getChatMessages);
+
+/**
+ * POST /api/chat
+ * Създава чат съобщение
+ */
 router.post('/', createChatMessage);
 
 export default router;

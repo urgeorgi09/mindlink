@@ -1,4 +1,4 @@
-// src/components/CrisisResources.jsx
+// src/components/CrisisResources.jsx - Fully Responsive
 import React from "react";
 import {
   Box,
@@ -8,7 +8,9 @@ import {
   Button,
   Chip,
   Divider,
-  Link as MuiLink
+  useMediaQuery,
+  useTheme,
+  Container
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
@@ -21,7 +23,9 @@ import {
 } from "lucide-react";
 
 export default function CrisisResources() {
-  // 🇧🇬 Български ресурси
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const bgResources = [
     {
       title: "Спешна помощ – 112",
@@ -57,7 +61,6 @@ export default function CrisisResources() {
     }
   ];
 
-  // 🌍 Международни ресурси
   const intlResources = [
     {
       title: "988 Suicide & Crisis Lifeline (USA)",
@@ -80,54 +83,80 @@ export default function CrisisResources() {
   ];
 
   const card = (item) => (
-    <motion.div whileHover={{ scale: 1.02 }} style={{ width: "100%" }}>
+    <motion.div 
+      whileHover={{ scale: isMobile ? 1 : 1.02 }} 
+      style={{ width: "100%" }}
+    >
       <Paper
         elevation={4}
         sx={{
-          p: 3,
-          mb: 3,
-          borderRadius: 4,
+          p: { xs: 2, sm: 2.5, md: 3 },
+          mb: { xs: 2, md: 3 },
+          borderRadius: { xs: 3, md: 4 },
           background: "linear-gradient(135deg, #ffffff 0%, #f4f4ff 100%)",
           boxShadow: "0 6px 20px rgba(0,0,0,0.10)"
         }}
       >
-        <Stack direction="row" spacing={3} alignItems="center">
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={{ xs: 2, sm: 3 }} 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+        >
           <Box
             sx={{
-              width: 60,
-              height: 60,
+              width: { xs: 50, md: 60 },
+              height: { xs: 50, md: 60 },
+              minWidth: { xs: 50, md: 60 },
               borderRadius: "50%",
               background: `${item.color || "#6b7280"}20`,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
+              mx: { xs: 'auto', sm: 0 }
             }}
           >
-            <item.icon size={32} color={item.color || "#6b7280"} />
+            <item.icon size={isMobile ? 28 : 32} color={item.color || "#6b7280"} />
           </Box>
 
-          <Box flex={1}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <Box flex={1} width="100%">
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 600,
+                fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                textAlign: { xs: 'center', sm: 'left' }
+              }}
+            >
               {item.title}
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                opacity: 0.8, 
+                mt: 0.5,
+                fontSize: { xs: '0.85rem', sm: '0.9rem', md: '0.95rem' },
+                textAlign: { xs: 'center', sm: 'left' }
+              }}
+            >
               {item.desc}
             </Typography>
             {item.type && (
               <Chip
                 label={item.type}
+                size="small"
                 sx={{
                   mt: 1.5,
                   background: `${item.color}20`,
                   color: item.color,
-                  fontWeight: 600
+                  fontWeight: 600,
+                  display: { xs: 'inline-flex', sm: 'inline-flex' },
+                  mx: { xs: 'auto', sm: 0 }
                 }}
               />
             )}
           </Box>
         </Stack>
 
-        {/* Phone / Web button */}
         <Box sx={{ mt: 2 }}>
           {item.phone ? (
             <Button
@@ -135,11 +164,11 @@ export default function CrisisResources() {
               fullWidth
               href={`tel:${item.phone}`}
               sx={{
-                py: 1.3,
+                py: { xs: 1, sm: 1.3 },
                 borderRadius: 3,
                 background: `linear-gradient(135deg, ${item.color} 0%, #00000040 120%)`,
                 fontWeight: 700,
-                fontSize: "0.95rem"
+                fontSize: { xs: '0.9rem', sm: '0.95rem' }
               }}
             >
               Обади се
@@ -151,11 +180,11 @@ export default function CrisisResources() {
               href={item.url}
               target="_blank"
               sx={{
-                py: 1.3,
+                py: { xs: 1, sm: 1.3 },
                 borderRadius: 3,
                 background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                 fontWeight: 700,
-                fontSize: "0.95rem"
+                fontSize: { xs: '0.9rem', sm: '0.95rem' }
               }}
             >
               Посети сайта
@@ -167,30 +196,58 @@ export default function CrisisResources() {
   );
 
   return (
-    <Box sx={{ p: 4, maxWidth: "1100px", mx: "auto" }}>
-      <Typography variant="h4" align="center" sx={{ mb: 4, fontWeight: 700 }}>
-        🆘 Кризисни ресурси и помощ
-      </Typography>
+    <Container maxWidth="lg">
+      <Box sx={{ 
+        p: { xs: 2, sm: 3, md: 4 }, 
+        maxWidth: "1100px", 
+        mx: "auto" 
+      }}>
+        <Typography 
+          variant="h4" 
+          align="center" 
+          sx={{ 
+            mb: { xs: 3, md: 4 }, 
+            fontWeight: 700,
+            fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+          }}
+        >
+          🆘 Кризисни ресурси и помощ
+        </Typography>
 
-      {/* 🇧🇬 България */}
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
-        🇧🇬 Български ресурси
-      </Typography>
+        {/* България */}
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            mb: 2, 
+            fontWeight: 700,
+            fontSize: { xs: '1.25rem', sm: '1.5rem' }
+          }}
+        >
+          🇧🇬 Български ресурси
+        </Typography>
 
-      {bgResources.map((item, i) => (
-        <React.Fragment key={i}>{card(item)}</React.Fragment>
-      ))}
+        {bgResources.map((item, i) => (
+          <React.Fragment key={i}>{card(item)}</React.Fragment>
+        ))}
 
-      <Divider sx={{ my: 4 }} />
+        <Divider sx={{ my: { xs: 3, md: 4 } }} />
 
-      {/* 🌍 International */}
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
-        🌍 Международни ресурси
-      </Typography>
+        {/* International */}
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            mb: 2, 
+            fontWeight: 700,
+            fontSize: { xs: '1.25rem', sm: '1.5rem' }
+          }}
+        >
+          🌍 Международни ресурси
+        </Typography>
 
-      {intlResources.map((item, i) => (
-        <React.Fragment key={i}>{card(item)}</React.Fragment>
-      ))}
-    </Box>
+        {intlResources.map((item, i) => (
+          <React.Fragment key={i}>{card(item)}</React.Fragment>
+        ))}
+      </Box>
+    </Container>
   );
 }

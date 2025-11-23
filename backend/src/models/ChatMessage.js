@@ -2,10 +2,9 @@ import mongoose from 'mongoose';
 
 const chatMessageSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-    index: true
+  type: String,  // UUID като string
+  required: true,
+  index: true
   },
   message: {
     type: String,

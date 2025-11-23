@@ -1,3 +1,4 @@
+// src/components/BreathingExercise.jsx - Fully Responsive
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -9,11 +10,17 @@ import {
   Card,
   CardContent,
   Stack,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wind, Square, Heart } from "lucide-react";
 
 const BreathingExercise = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [isActive, setIsActive] = useState(false);
   const [technique, setTechnique] = useState("478");
   const [count, setCount] = useState(0);
@@ -81,28 +88,52 @@ const BreathingExercise = () => {
     setCount(0);
   };
 
+  const circleSize = isMobile ? 180 : isTablet ? 200 : 220;
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container 
+      maxWidth="md" 
+      sx={{ py: { xs: 3, sm: 4, md: 5 } }}
+    >
       <Paper
         elevation={4}
-        sx={{ p: 4, borderRadius: 4, background: "#fafafa" }}
+        sx={{ 
+          p: { xs: 2, sm: 3, md: 4 }, 
+          borderRadius: 4, 
+          background: "#fafafa" 
+        }}
         component={motion.div}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Header */}
-        <Box textAlign="center" mb={4}>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+        <Box textAlign="center" mb={{ xs: 3, md: 4 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight={700} 
+            gutterBottom
+            sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}
+          >
             Дихателни Упражнения
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography 
+            variant="body1" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+          >
             Намали стреса и тревожността с контролирано дишане
           </Typography>
         </Box>
 
         {/* Technique Selection */}
         {!isActive && (
-          <Stack direction="row" spacing={2} justifyContent="center" mb={4}>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={2} 
+            justifyContent="center" 
+            mb={{ xs: 3, md: 4 }}
+            sx={{ px: { xs: 1, sm: 0 } }}
+          >
             {Object.entries(techniques).map(([key, tech]) => {
               const Icon = tech.icon;
               return (
@@ -113,7 +144,12 @@ const BreathingExercise = () => {
                   onClick={() => setTechnique(key)}
                   color={technique === key ? "primary" : "default"}
                   variant={technique === key ? "filled" : "outlined"}
-                  sx={{ px: 2, py: 1, fontSize: "0.9rem" }}
+                  sx={{ 
+                    px: { xs: 1.5, sm: 2 }, 
+                    py: { xs: 2.5, sm: 1 }, 
+                    fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    width: { xs: '100%', sm: 'auto' }
+                  }}
                 />
               );
             })}
@@ -121,11 +157,11 @@ const BreathingExercise = () => {
         )}
 
         {/* Circle UI */}
-        <Box display="flex" justifyContent="center" mb={4}>
+        <Box display="flex" justifyContent="center" mb={{ xs: 3, md: 4 }}>
           <Paper
             sx={{
-              width: 220,
-              height: 220,
+              width: circleSize,
+              height: circleSize,
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
@@ -139,33 +175,41 @@ const BreathingExercise = () => {
             transition={{ duration: 0.6, ease: "easeInOut" }}
           >
             <AnimatePresence mode="wait">
-  {!isActive ? (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      style={{ textAlign: "center" }}   // ← добавено
-    >
-      <Typography variant="h6">Готов?</Typography>
-      <Typography variant="body2">Натисни започни</Typography>
-    </motion.div>
-  ) : (
-    <motion.div
-      key={currentPhase.text}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      style={{ textAlign: "center" }}   // ← добавено
-    >
-      <Typography variant="h5" fontWeight={700} mb={1}>
-        {currentPhase.text}
-      </Typography>
-      <Typography variant="h3" fontWeight={700}>
-        {count}
-      </Typography>
-    </motion.div>
-  )}
-</AnimatePresence>
-
+              {!isActive ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{ textAlign: "center" }}
+                >
+                  <Typography variant={isMobile ? "body1" : "h6"}>Готов?</Typography>
+                  <Typography variant={isMobile ? "body2" : "body1"}>
+                    Натисни започни
+                  </Typography>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={currentPhase.text}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  style={{ textAlign: "center" }}
+                >
+                  <Typography 
+                    variant={isMobile ? "h6" : "h5"} 
+                    fontWeight={700} 
+                    mb={1}
+                  >
+                    {currentPhase.text}
+                  </Typography>
+                  <Typography 
+                    variant={isMobile ? "h2" : "h3"} 
+                    fontWeight={700}
+                  >
+                    {count}
+                  </Typography>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Paper>
         </Box>
 
@@ -177,16 +221,26 @@ const BreathingExercise = () => {
             animate={{ opacity: 1, y: 0 }}
             sx={{ mb: 3, borderRadius: 3 }}
           >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-around">
+            <CardContent sx={{ py: { xs: 2, md: 3 } }}>
+              <Stack 
+                direction="row" 
+                justifyContent="space-around"
+                spacing={{ xs: 2, sm: 4 }}
+              >
                 <Box textAlign="center">
-                  <Typography variant="h4" color="primary">
+                  <Typography 
+                    variant={isMobile ? "h5" : "h4"} 
+                    color="primary"
+                  >
                     {completedCycles}
                   </Typography>
                   <Typography variant="body2">Цикли</Typography>
                 </Box>
                 <Box textAlign="center">
-                  <Typography variant="h4" color="secondary">
+                  <Typography 
+                    variant={isMobile ? "h5" : "h4"} 
+                    color="secondary"
+                  >
                     {Math.floor(
                       (completedCycles *
                         currentTechnique.phases.reduce(
@@ -204,12 +258,14 @@ const BreathingExercise = () => {
         )}
 
         {/* Controls */}
-        <Box textAlign="center" mt={3}>
+        <Box textAlign="center" mt={{ xs: 2, md: 3 }}>
           {!isActive ? (
             <Button
               variant="contained"
-              size="large"
+              size={isMobile ? "medium" : "large"}
               onClick={startExercise}
+              fullWidth={isMobile}
+              sx={{ maxWidth: { xs: '100%', sm: 200 } }}
             >
               Започни
             </Button>
@@ -217,8 +273,10 @@ const BreathingExercise = () => {
             <Button
               variant="contained"
               color="error"
-              size="large"
+              size={isMobile ? "medium" : "large"}
               onClick={stopExercise}
+              fullWidth={isMobile}
+              sx={{ maxWidth: { xs: '100%', sm: 200 } }}
             >
               Спри
             </Button>
@@ -227,12 +285,20 @@ const BreathingExercise = () => {
 
         {/* Instructions */}
         {!isActive && (
-          <Card sx={{ mt: 4, borderRadius: 3 }}>
+          <Card sx={{ mt: { xs: 3, md: 4 }, borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h6" mb={1}>
+              <Typography 
+                variant="h6" 
+                mb={1}
+                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+              >
                 Как работи?
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}
+              >
                 • <strong>4-7-8:</strong> Успокояващо, помага за заспиване
                 <br />• <strong>Box:</strong> Намалява стрес и тревожност
                 <br />• <strong>5-5:</strong> Бързо релаксиране навсякъде

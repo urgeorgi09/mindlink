@@ -6,7 +6,7 @@ export const authMiddleware = (req, res, next) => {
   // НЯМА токен → работим като анонимен user
   if (!authHeader) {
     req.user = { 
-      id: req.headers["x-anonymous-id"] || null,
+      id: req.headers["x-user-id"] || null,
       anonymous: true
     };
     return next();

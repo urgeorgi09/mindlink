@@ -1,13 +1,14 @@
+// src/components/AiChat.jsx - Compact Version
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Box, Typography, Paper, TextField, IconButton, 
-  Container, Avatar, CircularProgress, Skeleton 
+  Container, Avatar, CircularProgress, Skeleton, useMediaQuery, useTheme 
 } from '@mui/material';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChat } from '../hooks/useChat';
 
-const Message = ({ message, isAi }) => {
+const Message = ({ message, isAi, isMobile }) => {
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
@@ -19,7 +20,7 @@ const Message = ({ message, isAi }) => {
         sx={{
           display: 'flex',
           justifyContent: isAi ? 'flex-start' : 'flex-end',
-          mb: 3,
+          mb: { xs: 2, md: 3 },
         }}
       >
         {isAi && (
@@ -27,22 +28,22 @@ const Message = ({ message, isAi }) => {
             sx={{
               bgcolor: 'transparent',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              mr: 2,
-              width: 48,
-              height: 48,
+              mr: { xs: 1, sm: 2 },
+              width: { xs: 40, md: 48 },
+              height: { xs: 40, md: 48 },
               boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
             }}
           >
-            <Bot size={24} />
+            <Bot size={isMobile ? 20 : 24} />
           </Avatar>
         )}
         
         <Paper
           elevation={0}
           sx={{
-            maxWidth: '75%',
-            p: 2.5,
-            borderRadius: 3,
+            maxWidth: { xs: '80%', sm: '75%' },
+            p: { xs: 1.5, sm: 2, md: 2.5 },
+            borderRadius: { xs: 2, md: 3 },
             bgcolor: isAi ? 'background.paper' : 'transparent',
             background: isAi 
               ? 'white' 
@@ -54,7 +55,7 @@ const Message = ({ message, isAi }) => {
             border: isAi ? '1px solid' : 'none',
             borderColor: isAi ? 'divider' : 'transparent',
             position: 'relative',
-            '&::before': isAi ? {
+            '&::before': (isAi && !isMobile) ? {
               content: '""',
               position: 'absolute',
               left: -8,
@@ -72,7 +73,8 @@ const Message = ({ message, isAi }) => {
             sx={{ 
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
+              wordBreak: 'break-word',
+              fontSize: { xs: '0.9rem', sm: '0.95rem', md: '1rem' }
             }}
           >
             {message}
@@ -83,13 +85,13 @@ const Message = ({ message, isAi }) => {
           <Avatar
             sx={{
               bgcolor: 'secondary.main',
-              ml: 2,
-              width: 48,
-              height: 48,
+              ml: { xs: 1, sm: 2 },
+              width: { xs: 40, md: 48 },
+              height: { xs: 40, md: 48 },
               boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
             }}
           >
-            <User size={24} />
+            <User size={isMobile ? 20 : 24} />
           </Avatar>
         )}
       </Box>
@@ -98,8 +100,12 @@ const Message = ({ message, isAi }) => {
 };
 
 export default function AiChat() {
-  const { messages, loading, sending, sendMessage } = useChat();
-  const [newMessage, setNewMessage] = useState('');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const { message, setMessage, loading, sending, sendMessage } = useChat();
+  const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -112,14 +118,29 @@ export default function AiChat() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!message.trim() || sending) return;
 
-    const messageText = newMessage;
-    setNewMessage('');
-    
-    await sendMessage(messageText);
-    
-    // Focus back on input
+    const userMessage = {
+      id: Date.now(),
+      text: message,
+      isAi: false
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setMessage("");
+
+    const aiResponse = await sendMessage(userMessage.text);
+
+    if (aiResponse) {
+      const aiMsg = {
+        id: Date.now() + 1,
+        text: aiResponse,
+        isAi: true
+      };
+
+      setMessages(prev => [...prev, aiMsg]);
+    }
+
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
@@ -130,21 +151,26 @@ export default function AiChat() {
     }
   };
 
+  // 🔽 НАМАЛЕНА ВИСОЧИНА - от 60vh/500px/600px на 45vh/380px/450px
+  const chatHeight = isMobile ? '45vh' : isTablet ? '380px' : '450px';
+  const iconSize = isMobile ? 32 : isTablet ? 36 : 40;
+  const circleSize = isMobile ? 60 : isTablet ? 70 : 80;
+
   return (
     <Container maxWidth="lg">
-      <Box sx={{ py: 6 }}>
+      <Box sx={{ py: { xs: 3, sm: 4, md: 6 }, px: { xs: 2, sm: 0 } }}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 5 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <Box
                 sx={{
-                  width: 80,
-                  height: 80,
+                  width: circleSize,
+                  height: circleSize,
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   display: 'flex',
@@ -158,13 +184,22 @@ export default function AiChat() {
                   }
                 }}
               >
-                <Sparkles size={40} color="white" />
+                <Sparkles size={iconSize} color="white" />
               </Box>
             </Box>
-            <Typography variant="h3" fontWeight="700" gutterBottom>
+            <Typography 
+              variant="h3" 
+              fontWeight="700" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' } }}
+            >
               AI Помощник
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography 
+              variant="h6" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' } }}
+            >
               Поговори с мен за каквото те вълнува
             </Typography>
           </Box>
@@ -179,7 +214,7 @@ export default function AiChat() {
           <Paper
             elevation={0}
             sx={{
-              borderRadius: 4,
+              borderRadius: { xs: 3, md: 4 },
               overflow: 'hidden',
               border: '2px solid',
               borderColor: 'divider',
@@ -189,9 +224,9 @@ export default function AiChat() {
             {/* Messages Area */}
             <Box
               sx={{
-                height: '600px',
+                height: chatHeight,
                 overflowY: 'auto',
-                p: 4,
+                p: { xs: 2, sm: 3, md: 4 },
                 bgcolor: '#fafafa',
                 backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(102, 126, 234, 0.05) 1px, transparent 0)',
                 backgroundSize: '40px 40px',
@@ -214,8 +249,18 @@ export default function AiChat() {
                 <>
                   {[1, 2, 3].map(i => (
                     <Box key={i} sx={{ mb: 3, display: 'flex', alignItems: 'flex-start' }}>
-                      <Skeleton variant="circular" width={48} height={48} sx={{ mr: 2 }} />
-                      <Skeleton variant="rectangular" width="60%" height={80} sx={{ borderRadius: 3 }} />
+                      <Skeleton 
+                        variant="circular" 
+                        width={isMobile ? 40 : 48} 
+                        height={isMobile ? 40 : 48} 
+                        sx={{ mr: 2 }} 
+                      />
+                      <Skeleton 
+                        variant="rectangular" 
+                        width={isMobile ? '70%' : '60%'} 
+                        height={isMobile ? 60 : 80} 
+                        sx={{ borderRadius: 3 }} 
+                      />
                     </Box>
                   ))}
                 </>
@@ -226,6 +271,7 @@ export default function AiChat() {
                       key={msg._id || msg.id}
                       message={msg.message || msg.text}
                       isAi={msg.isAi}
+                      isMobile={isMobile}
                     />
                   ))}
                 </AnimatePresence>
@@ -242,16 +288,16 @@ export default function AiChat() {
                         bgcolor: 'transparent',
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         mr: 2,
-                        width: 48,
-                        height: 48,
+                        width: { xs: 40, md: 48 },
+                        height: { xs: 40, md: 48 },
                       }}
                     >
-                      <Bot size={24} />
+                      <Bot size={isMobile ? 20 : 24} />
                     </Avatar>
                     <Paper
                       elevation={0}
                       sx={{
-                        p: 2,
+                        p: { xs: 1.5, md: 2 },
                         borderRadius: 3,
                         bgcolor: 'white',
                         border: '1px solid',
@@ -259,36 +305,19 @@ export default function AiChat() {
                       }}
                     >
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <motion.div
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                          style={{ 
-                            width: 8, 
-                            height: 8, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                          }}
-                        />
-                        <motion.div
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                          style={{ 
-                            width: 8, 
-                            height: 8, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                          }}
-                        />
-                        <motion.div
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                          style={{ 
-                            width: 8, 
-                            height: 8, 
-                            borderRadius: '50%', 
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                          }}
-                        />
+                        {[0, 0.2, 0.4].map((delay, i) => (
+                          <motion.div
+                            key={i}
+                            animate={{ scale: [1, 1.3, 1] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay }}
+                            style={{ 
+                              width: isMobile ? 6 : 8, 
+                              height: isMobile ? 6 : 8, 
+                              borderRadius: '50%', 
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                            }}
+                          />
+                        ))}
                       </Box>
                     </Paper>
                   </Box>
@@ -301,19 +330,19 @@ export default function AiChat() {
             {/* Input Area */}
             <Box
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 2.5, md: 3 },
                 bgcolor: 'white',
                 borderTop: '2px solid',
                 borderColor: 'divider',
               }}
             >
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
                 <TextField
                   fullWidth
                   multiline
-                  maxRows={4}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  maxRows={isMobile ? 3 : 4}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Напиши съобщение..."
                   inputRef={inputRef}
@@ -322,6 +351,7 @@ export default function AiChat() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 3,
                       bgcolor: '#fafafa',
+                      fontSize: { xs: '0.9rem', md: '1rem' },
                       '& fieldset': { borderColor: 'divider' },
                       '&:hover fieldset': { borderColor: 'primary.main' },
                       '&.Mui-focused fieldset': { 
@@ -333,15 +363,15 @@ export default function AiChat() {
                 />
                 
                 <motion.div 
-                  whileHover={{ scale: 1.05 }} 
+                  whileHover={{ scale: isMobile ? 1 : 1.05 }} 
                   whileTap={{ scale: 0.95 }}
                 >
                   <IconButton
                     onClick={handleSend}
-                    disabled={sending || !newMessage.trim()}
+                    disabled={sending || !(message && message.trim())}
                     sx={{
-                      width: 64,
-                      height: 64,
+                      width: { xs: 48, sm: 56, md: 64 },
+                      height: { xs: 48, sm: 56, md: 64 },
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       color: 'white',
                       boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
@@ -356,9 +386,9 @@ export default function AiChat() {
                     }}
                   >
                     {sending ? (
-                      <CircularProgress size={24} sx={{ color: 'white' }} />
+                      <CircularProgress size={isMobile ? 20 : 24} sx={{ color: 'white' }} />
                     ) : (
-                      <Send />
+                      <Send size={isMobile ? 18 : 24} />
                     )}
                   </IconButton>
                 </motion.div>

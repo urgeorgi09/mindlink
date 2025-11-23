@@ -1,43 +1,42 @@
-import { Therapist } from '../models/index.js';
+// backend/src/controllers/therapistController.js
+import Therapist from "../models/Therapist.js";
 
-// GET /api/therapists - Търси терапевти
+/**
+ * GET /api/therapists
+ * optional query: city, specialty, search
+ */
 export const getTherapists = async (req, res) => {
   try {
     const { city, specialty, search } = req.query;
+    const query = {};
 
-    let query = {};
-
-    if (city && city !== 'Всички градове') {
-      query.city = city;
-    }
-    
-    if (specialty && specialty !== 'Всички специалности') {
-      query.specialty = specialty;
-    }
-
+    if (city) query.city = city;
+    if (specialty) query.specialty = specialty;
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { expertise: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { specialty: { $regex: search, $options: "i" } },
+        { expertise: { $regex: search, $options: "i" } }
       ];
     }
 
-    const therapists = await Therapist.find(query);
-    res.json(therapists);
+    const list = await Therapist.find(query).limit(100);
+    res.json(list);
   } catch (err) {
-    console.error('❌ Error fetching therapists:', err);
-    res.status(500).json({ error: err.message });
+    console.error("❌ getTherapists error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// POST /api/therapists - Добавя нов терапевт (optional)
 export const createTherapist = async (req, res) => {
   try {
-    const therapist = new Therapist(req.body);
-    await therapist.save();
-    res.status(201).json(therapist);
+    const t = new Therapist(req.body);
+    await t.save();
+    res.status(201).json(t);
   } catch (err) {
-    console.error('❌ Error creating therapist:', err);
+    console.error("❌ createTherapist error:", err);
     res.status(400).json({ error: err.message });
   }
 };
+
+export default { getTherapists, createTherapist };

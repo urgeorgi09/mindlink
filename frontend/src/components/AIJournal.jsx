@@ -1,17 +1,23 @@
+// src/components/AIJournal.jsx - Full Width Writing Area
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Container, Paper, Typography, TextField, IconButton,
   Button, Chip, Stack, Card, CardContent, Divider, Avatar,
-  Snackbar, Alert, Grid
+  Snackbar, Alert, Grid, CircularProgress, useMediaQuery, useTheme
 } from '@mui/material';
 import {
   BookOpen, Sparkles, Save, RefreshCw, Tag as TagIcon,
   Lock, Unlock, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { saveJournalEntry } from "../services/api";
+import { saveJournalEntry, getJournalEntries, getAIResponse } from "../services/api";
+import { getOrCreateUserId } from '../utils/userId';
 
 const AIJournal = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  const [userId] = useState(() => getOrCreateUserId());
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [entry, setEntry] = useState('');
   const [tags, setTags] = useState([]);
@@ -20,88 +26,91 @@ const AIJournal = () => {
   const [entries, setEntries] = useState([]);
   const [wordCount, setWordCount] = useState(0);
   const [saveOpen, setSaveOpen] = useState(false);
-
-  // AI-Generated Prompts based on mood and context
-  const aiPrompts = [
-    {
-      category: 'reflection',
-      prompts: [
-        'Каква е една малка победа от миналата седмица, за която си горд/а?',
-        'Какво те направи щастлив/а днес?',
-        'Кой беше най-важният разговор днес и защо?',
-        'Какво научи за себе си тази седмица?',
-        'Опиши един момент от днес, когато се почувства наистина себе си.'
-      ]
-    },
-    {
-      category: 'gratitude',
-      prompts: [
-        'За какво си благодарен/а днес?',
-        'Кой човек направи деня ти по-добър и как?',
-        'Какво малко нещо те зарадва днес?',
-        'Запиши три неща, които ценяваш в момента.',
-        'Каква е една способност/умение, за което си благодарен/а?'
-      ]
-    },
-    {
-      category: 'growth',
-      prompts: [
-        'Каква е една промяна, която искаш да направиш?',
-        'Какво предизвикателство преодоля напоследък?',
-        'В коя област искаш да растеш повече?',
-        'Какво би направил/а днес, ако нямаше страх?',
-        'Как днешният ти аз може да помогне на бъдещия ти аз?'
-      ]
-    },
-    {
-      category: 'emotions',
-      prompts: [
-        'Как се чувстваш в момента и защо?',
-        'Коя емоция те изненада днес?',
-        'Какво ти е нужно, за да се почувстваш по-добре?',
-        'Опиши настроението си с три думи.',
-        'Какво искаше да кажеш днес, но не каза?'
-      ]
-    },
-    {
-      category: 'creativity',
-      prompts: [
-        'Ако днешният ти ден беше цвят, какъв би бил?',
-        'Напиши кратка история за нещо, което те вдъхнови.',
-        'Какво би казал на себе си преди 5 години?',
-        'Опиши перфектния си ден от началото до края.',
-        'Какво мечтаеш да постигнеш през следващата година?'
-      ]
-    }
-  ];
-
-  // Mock entries for demo
-  const mockEntries = [
-    {
-      id: 1,
-      date: '21 Ноември 2025',
-      prompt: 'Какво те направи щастлив/а днес?',
-      content: 'Днес имах чудесен разговор с приятел… Беше зареждащо и ме накара да се усмихна истински.',
-      tags: ['приятели', 'щастие'],
-      isPrivate: true,
-      wordCount: 45
-    },
-    {
-      id: 2,
-      date: '20 Ноември 2025',
-      prompt: 'За какво си благодарен/а днес?',
-      content: 'Благодарен съм за слънчевото време и кратката разходка в парка — успя да ми изчисти главата.',
-      tags: ['благодарност', 'природа'],
-      isPrivate: true,
-      wordCount: 62
-    }
-  ];
+  const [isLoading, setIsLoading] = useState(false);
+  const [promptLoading, setPromptLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const contentRef = useRef(null);
 
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'Няма дата';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'Невалидна дата';
+      return date.toLocaleDateString('bg-BG', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return 'Грешка в датата';
+    }
+  };
+
+  const generateNewPrompt = async () => {
+    setPromptLoading(true);
+    
+    try {
+      const aiPromptRequest = `Ти си терапевт и life coach. Генерирай ЕДИН кратък въпрос за дневник на български език. 
+      
+Въпросът трябва да е:
+- За саморефлексия, благодарност, емоции или личностно развитие
+- Кратък (до 15 думи)
+- Вдъхновяващ и позитивен
+- На български език
+
+Категории за избор (избери произволна):
+- Рефлексия за деня
+- Благодарност
+- Емоции и чувства
+- Личностен растеж
+- Цели и мечти
+- Взаимоотношения
+
+Отговори САМО с въпроса, без допълнителен текст или обяснения.`;
+
+      const response = await getAIResponse(aiPromptRequest);
+      const newPrompt = response.reply || response;
+      
+      const cleanPrompt = newPrompt
+        .replace(/^["']|["']$/g, '')
+        .replace(/^\d+\.\s*/, '')
+        .trim();
+      
+      setCurrentPrompt(cleanPrompt || 'Как се чувстваш днес?');
+      
+    } catch (err) {
+      console.error('❌ Error generating prompt:', err);
+      const fallbackPrompts = [
+        'Как се чувстваш в момента?',
+        'За какво си благодарен/а днес?',
+        'Какво те направи щастлив/а днес?',
+        'Какво научи за себе си тази седмица?',
+        'Какво искаш да постигнеш утре?'
+      ];
+      const randomPrompt = fallbackPrompts[Math.floor(Math.random() * fallbackPrompts.length)];
+      setCurrentPrompt(randomPrompt);
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // initialize
-    setEntries(mockEntries);
+    const loadEntries = async () => {
+      try {
+        setIsLoading(true);
+        const res = await getJournalEntries();
+        const journalEntries = res.entries || res || [];
+        setEntries(journalEntries);
+      } catch (err) {
+        console.error('❌ Error loading journal entries:', err);
+        setError('Грешка при зареждане на записите');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadEntries();
     generateNewPrompt();
   }, []);
 
@@ -112,43 +121,39 @@ const AIJournal = () => {
     setWordCount(words);
   }, [entry]);
 
-  const generateNewPrompt = () => {
-    const allPrompts = aiPrompts.flatMap(cat => cat.prompts);
-    const randomPrompt = allPrompts[Math.floor(Math.random() * allPrompts.length)];
-    setCurrentPrompt(randomPrompt);
-  };
-
   const handleSaveEntry = async () => {
-  if (!entry.trim()) return;
+    if (!entry.trim()) return;
 
-  const newEntry = {
-    prompt: currentPrompt,
-    content: entry,
-    tags,
-    isPrivate,
-    wordCount
-  };
+    const newEntry = {
+      prompt: currentPrompt,
+      content: entry,
+      tags,
+      isPrivate,
+      wordCount
+    };
 
-try {
-  const res = await saveJournalEntry(newEntry);
+    try {
+      setIsLoading(true);
+      const res = await saveJournalEntry(newEntry);
+      
+      const savedEntry = {
+        ...res.entry,
+        tags: res.entry?.tags ?? []
+      };
 
-  const entry = {
-    ...res.data.entry,
-    tags: res.data.entry?.tags ?? []
-  };
+      setEntries(prev => [savedEntry, ...prev]);
+      setSaveOpen(true);
+      setEntry("");
+      setTags([]);
+      generateNewPrompt();
 
-  setEntries(prev => [entry, ...prev]);
+    } catch (err) {
+      console.error("Save error:", err);
+      setError('Грешка при запазване на записа');
+    } finally {
+      setIsLoading(false);
+    }
 
-  setSaveOpen(true);
-  setEntry("");
-  setTags(entry.tags); // ← правилно!
-  generateNewPrompt();
-
-} catch (err) {
-  console.error("Save error:", err);
-}
-
-    // optional: scroll to top of entries
     setTimeout(() => {
       contentRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 300);
@@ -178,17 +183,23 @@ try {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 4, md: 6 }, px: { xs: 2, sm: 3 } }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
           <Box
             sx={{
-              width: 88,
-              height: 88,
+              width: { xs: 70, md: 88 },
+              height: { xs: 70, md: 88 },
               mx: 'auto',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -198,13 +209,26 @@ try {
               boxShadow: '0 10px 40px rgba(102, 126, 234, 0.35)'
             }}
           >
-            <BookOpen size={36} color="white" />
+            <BookOpen size={isMobile ? 30 : 36} color="white" />
           </Box>
 
-          <Typography variant="h4" fontWeight={800} sx={{ mt: 2 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight={800} 
+            sx={{ 
+              mt: 2,
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+            }}
+          >
             Моят AI Дневник
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
+          <Typography 
+            color="text.secondary" 
+            sx={{ 
+              mt: 1,
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}
+          >
             Ежедневни AI подкани за саморефлексия и личностен растеж
           </Typography>
         </Box>
@@ -218,8 +242,8 @@ try {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: 3,
-            p: { xs: 2, md: 3 },
+            borderRadius: { xs: 2, md: 3 },
+            p: { xs: 2, sm: 2.5, md: 3 },
             mb: 4,
             border: '2px solid',
             borderColor: 'divider',
@@ -228,8 +252,15 @@ try {
           }}
         >
           {/* Prompt Row */}
-          <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-            <Grid item xs={12} md={8}>
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between'
+            }}>
+              {/* AI Prompt */}
               <Box sx={{
                 display: 'flex',
                 gap: 2,
@@ -238,265 +269,357 @@ try {
                 borderRadius: 2,
                 background: 'linear-gradient(90deg, rgba(243,244,255,0.8), rgba(252,245,255,0.8))',
                 border: '1px solid',
-                borderColor: 'divider'
+                borderColor: 'divider',
+                minHeight: 80,
+                flex: 1
               }}>
                 <Avatar sx={{
                   bgcolor: 'transparent',
-                  width: 44,
-                  height: 44,
+                  width: { xs: 40, md: 44 },
+                  height: { xs: 40, md: 44 },
                   mt: '2px',
                   background: 'linear-gradient(135deg, #a78bfa, #f472b6)',
                   boxShadow: '0 6px 20px rgba(167,139,250,0.18)'
                 }}>
-                  <Sparkles size={20} color="white" />
+                  <Sparkles size={isMobile ? 18 : 20} color="white" />
                 </Avatar>
 
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <Typography 
+                    variant="subtitle2" 
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                  >
                     💡 AI Подкана за днес:
                   </Typography>
-                  <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }}>
-                    "{currentPrompt}"
-                  </Typography>
+                  {promptLoading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                      <CircularProgress size={20} />
+                      <Typography variant="body2" color="text.secondary">
+                        Генерирам въпрос...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        mt: 0.5, 
+                        fontWeight: 700,
+                        fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' }
+                      }}
+                    >
+                      "{currentPrompt}"
+                    </Typography>
+                  )}
                 </Box>
               </Box>
-            </Grid>
 
-            <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-              <Stack direction="row" spacing={1}>
+              {/* Action Buttons */}
+              <Stack 
+                direction={{ xs: 'row', sm: 'row' }} 
+                spacing={1}
+                sx={{ 
+                  alignSelf: { xs: 'stretch', sm: 'center' },
+                  width: { xs: '100%', sm: 'auto' }
+                }}
+              >
                 <IconButton
                   onClick={generateNewPrompt}
-                  size="large"
+                  disabled={promptLoading}
+                  size={isMobile ? "medium" : "large"}
                   sx={{
                     borderRadius: 2,
                     border: '1px solid',
                     borderColor: 'divider',
-                    bgcolor: 'background.paper'
+                    bgcolor: 'background.paper',
+                    flex: { xs: 1, sm: 0 }
                   }}
-                  aria-label="Нова подкана"
                 >
-                  <RefreshCw />
+                  {promptLoading ? <CircularProgress size={24} /> : <RefreshCw size={isMobile ? 20 : 24} />}
                 </IconButton>
 
                 <Button
                   onClick={() => {
-                    // quick sample to insert prompt into editor (optional)
                     setEntry(prev => prev ? prev + '\n\n' + currentPrompt : currentPrompt);
                   }}
                   variant="contained"
-                  sx={{ borderRadius: 2 }}
+                  disabled={promptLoading}
+                  size={isMobile ? "medium" : "large"}
+                  sx={{ 
+                    borderRadius: 2,
+                    flex: { xs: 2, sm: 0 },
+                    fontSize: { xs: '0.6rem', sm: '0.7rem' }
+                  }}
                 >
                   Вмъкни подкана
                 </Button>
               </Stack>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
 
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 3 }} />
 
-          {/* Writing Area */}
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={8}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  inputRef={contentRef}
-                  multiline
-                  minRows={8}
-                  maxRows={18}
-                  value={entry}
-                  onChange={(e) => setEntry(e.target.value)}
-                  placeholder="Започни да пишеш мислите си тук..."
-                  variant="outlined"
-                  fullWidth
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      bgcolor: 'background.paper',
-                      '& fieldset': { borderColor: 'divider' },
-                      '&:hover fieldset': { borderColor: 'primary.main' },
-                      '&.Mui-focused fieldset': { borderWidth: 2 }
-                    }
-                  }}
-                />
+          {/* Full Width Writing Area */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              inputRef={contentRef}
+              multiline
+              minRows={isMobile ? 6 : 8}
+              maxRows={18}
+              value={entry}
+              onChange={(e) => setEntry(e.target.value)}
+              placeholder="Започни да пишеш мислите си тук..."
+              variant="outlined"
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  bgcolor: 'background.paper',
+                  fontSize: { xs: '0.95rem', md: '1rem' },
+                  '& fieldset': { borderColor: 'divider' },
+                  '&:hover fieldset': { borderColor: 'primary.main' },
+                  '&.Mui-focused fieldset': { borderWidth: 2 }
+                }
+              }}
+            />
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {wordCount} думи
-                  </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+              >
+                {wordCount} думи
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+              >
+                {entry.length > 0 ? '✍️ Пишеш...' : ''}
+              </Typography>
+            </Box>
 
-                  <Typography variant="body2" color="text.secondary">
-                    {entry.length > 0 ? '✍️ Пишеш...' : ''}
-                  </Typography>
-                </Box>
+            {/* Tags */}
+            <Box>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  mb: 1,
+                  fontSize: { xs: '0.9rem', sm: '1rem' }
+                }}
+              >
+                🏷️ Тагове
+              </Typography>
 
-                {/* Tags */}
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>🏷️ Тагове</Typography>
-
-                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                    {tags.map((t) => (
-                      <Chip
-                        key={t}
-                        label={`#${t}`}
-                        onDelete={() => removeTag(t)}
-                        color="primary"
-                        variant="outlined"
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                        deleteIcon={<TagIcon />}
-                      />
-                    ))}
-                  </Stack>
-
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <TextField
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleTagKeyDown}
-                      placeholder="Добави таг... (натисни Enter)"
-                      size="small"
-                      sx={{ flex: 1 }}
-                    />
-                    <Button variant="outlined" onClick={handleAddTag}>
-                      Добави
-                    </Button>
-                  </Box>
-                </Box>
-
-                {/* Privacy & Save */}
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                  <Box>
-                    <Button
-                      onClick={() => setIsPrivate(p => !p)}
-                      startIcon={isPrivate ? <Lock /> : <Unlock />}
-                      variant={isPrivate ? 'outlined' : 'contained'}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      {isPrivate ? 'Личен' : 'Публичен'}
-                    </Button>
-                  </Box>
-
-                  <Box>
-                    <Button
-                      onClick={handleSaveEntry}
-                      disabled={!entry.trim()}
-                      startIcon={<Save />}
-                      variant="contained"
-                      sx={{
-                        borderRadius: 2,
-                        px: 3,
-                        py: 1.2,
-                        background: entry.trim() ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : undefined
-                      }}
-                    >
-                      Запази запис
-                    </Button>
-                  </Box>
-                </Box>
-              </Box>
-            </Grid>
-
-            {/* Right column: quick actions / tips */}
-            <Grid item xs={12} md={4}>
-              <Stack spacing={2}>
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                    Бързи действия
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Button onClick={() => setEntry('')} variant="outlined">Изчисти текст</Button>
-                    <Button onClick={() => setEntry(prev => prev + '\n\n' + 'Благодарности: ')} variant="outlined">Добави структура</Button>
-                    <Button onClick={() => {
-                      const sample = "Днес бях благодарен/на за...";
-                      setEntry(prev => prev ? prev + '\n\n' + sample : sample);
-                    }} variant="outlined">Вмъкни пример</Button>
-                  </Stack>
-                </Paper>
-
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                    Съвет
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Пиши свободно — не се притеснявай за граматика. Запазвай редовно и използвай тагове, за да филтрираш по теми.
-                  </Typography>
-                </Paper>
+              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
+                {tags.map((t) => (
+                  <Chip
+                    key={t}
+                    label={`#${t}`}
+                    onDelete={() => removeTag(t)}
+                    color="primary"
+                    variant="outlined"
+                    size={isMobile ? "small" : "medium"}
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                    deleteIcon={<TagIcon size={16} />}
+                  />
+                ))}
               </Stack>
-            </Grid>
-          </Grid>
+
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder="Добави таг... (натисни Enter)"
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ flex: 1 }}
+                />
+                <Button 
+                  variant="outlined" 
+                  onClick={handleAddTag}
+                  size={isMobile ? "small" : "medium"}
+                >
+                  Добави
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Privacy & Save */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 2, sm: 1 },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'stretch', sm: 'center' },
+              mt: 1 
+            }}>
+              <Button
+                onClick={() => setIsPrivate(p => !p)}
+                startIcon={isPrivate ? <Lock size={18} /> : <Unlock size={18} />}
+                variant={isPrivate ? 'outlined' : 'contained'}
+                size={isMobile ? "medium" : "large"}
+                sx={{ borderRadius: 2 }}
+              >
+                {isPrivate ? 'Личен' : 'Публичен'}
+              </Button>
+
+              <Button
+                onClick={handleSaveEntry}
+                disabled={!entry.trim() || isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} /> : <Save size={18} />}
+                variant="contained"
+                size={isMobile ? "medium" : "large"}
+                sx={{
+                  borderRadius: 2,
+                  px: { xs: 3, md: 4 },
+                  py: { xs: 1.25, md: 1.5 },
+                  background: entry.trim() ? 'linear-gradient(90deg,#7c3aed,#ec4899)' : undefined
+                }}
+              >
+                {isLoading ? 'Запазване...' : 'Запази запис'}
+              </Button>
+            </Box>
+          </Box>
         </Paper>
       </motion.div>
 
       {/* Previous entries */}
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Calendar size={20} /> Предишни записи
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 800, 
+              mb: 2, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              fontSize: { xs: '1.25rem', sm: '1.5rem' }
+            }}
+          >
+            <Calendar size={isMobile ? 18 : 20} /> Предишни записи
           </Typography>
 
-          <Stack spacing={2}>
-            <AnimatePresence>
-              {entries.map((e, i) => (
-                <motion.div
-                  key={e.id || e._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ delay: i * 0.06 }}
-                >
-                  <Card variant="outlined" sx={{
-                    borderRadius: 2,
-                    boxShadow: '0 10px 30px rgba(2,6,23,0.04)'
-                  }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <Calendar size={16} />
-                          <Typography variant="caption" color="text.secondary">{e.date}</Typography>
+          {isLoading && entries.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <CircularProgress />
+              <Typography sx={{ mt: 2 }}>Зареждане...</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              <AnimatePresence>
+                {entries.map((e, i) => (
+                  <motion.div
+                    key={e._id || e.id || i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ delay: i * 0.06 }}
+                  >
+                    <Card variant="outlined" sx={{
+                      borderRadius: { xs: 2, md: 3 },
+                      boxShadow: '0 10px 30px rgba(2,6,23,0.04)'
+                    }}>
+                      <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          justifyContent: 'space-between', 
+                          mb: 1,
+                          gap: { xs: 1, sm: 0 }
+                        }}>
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Calendar size={14} />
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary"
+                              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                            >
+                              {formatDate(e.date || e.createdAt)}
+                            </Typography>
+                          </Box>
+
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            {e.isPrivate ? <Lock size={14} color="#6b7280" /> : <Unlock size={14} color="#2563eb" />}
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary"
+                              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                            >
+                              {e.wordCount || 0} думи
+                            </Typography>
+                          </Box>
                         </Box>
 
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          {e.isPrivate ? <Lock size={14} color="#6b7280" /> : <Unlock size={14} color="#2563eb" />}
-                          <Typography variant="caption" color="text.secondary">{e.wordCount} думи</Typography>
-                        </Box>
-                      </Box>
+                        {e.prompt && (
+                          <Typography 
+                            variant="body2" 
+                            color="primary" 
+                            sx={{ 
+                              fontWeight: 700, 
+                              mb: 1,
+                              fontSize: { xs: '0.85rem', sm: '0.95rem' }
+                            }}
+                          >
+                            💡 "{e.prompt}"
+                          </Typography>
+                        )}
 
-                      <Typography variant="body2" color="primary" sx={{ fontWeight: 700, mb: 1 }}>
-                        💡 "{e.prompt}"
-                      </Typography>
+                        <Typography 
+                          variant="body1" 
+                          color="text.primary" 
+                          sx={{ 
+                            mb: 1, 
+                            whiteSpace: 'pre-wrap',
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          }}
+                        >
+                          {e.content}
+                        </Typography>
 
-                      <Typography variant="body1" color="text.primary" sx={{ mb: 1, whiteSpace: 'pre-wrap' }}>
-                        {e.content}
-                      </Typography>
+                        {e.tags?.length > 0 && (
+                          <Stack direction="row" spacing={1} flexWrap="wrap">
+                            {e.tags.map((t, idx) => (
+                              <Chip 
+                                key={idx} 
+                                label={`#${t}`} 
+                                size="small" 
+                                variant="outlined" 
+                                sx={{ mr: 0.5, mb: 0.5 }} 
+                              />
+                            ))}
+                          </Stack>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
 
-                      {e.tags?.length > 0 && (
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
-                          {e.tags.map((t, idx) => (
-                            <Chip key={idx} label={`#${t}`} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
-                          ))}
-                        </Stack>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {entries.length === 0 && (
-              <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
-                <BookOpen size={36} color="#9ca3af" />
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  Още нямаш записи в дневника. Започни да пишеш, за да видиш историята си тук!
-                </Typography>
-              </Paper>
-            )}
-          </Stack>
+              {entries.length === 0 && !isLoading && (
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+                  <BookOpen size={36} color="#9ca3af" />
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                    Още нямаш записи в дневника. Започни да пишеш!
+                  </Typography>
+                </Paper>
+              )}
+            </Stack>
+          )}
         </Box>
       </motion.div>
 
       {/* Save snackbar */}
-      <Snackbar open={saveOpen} autoHideDuration={1800} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+      <Snackbar 
+        open={saveOpen} 
+        autoHideDuration={2000} 
+        onClose={handleCloseSnackbar} 
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
         <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
-          Записът е запазен!
+          ✅ Записът е запазен успешно!
         </Alert>
       </Snackbar>
     </Container>

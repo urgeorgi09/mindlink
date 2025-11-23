@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 * {
   margin: 0;
@@ -6,63 +6,243 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fef3f8 100%);
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-}
-
-main {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 20px;
+:root {
+  /* Успокояваща палитра */
+  --calm-blue: #7C9CBF;
+  --calm-lavender: #B8A9C9;
+  --calm-sage: #8FB8A0;
+  --calm-peach: #F4C2A4;
+  --calm-sky: #89CFF0;
+  
+  /* Фонови градиенти */
+  --bg-primary: linear-gradient(135deg, #E8F4F8 0%, #F5F0F8 50%, #F8F4E8 100%);
+  --bg-card: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,248,255,0.95) 100%);
+  
+  /* Сенки */
+  --shadow-sm: 0 2px 8px rgba(124, 156, 191, 0.08);
+  --shadow-md: 0 4px 16px rgba(124, 156, 191, 0.12);
+  --shadow-lg: 0 8px 30px rgba(124, 156, 191, 0.18);
+  
+  /* Текст */
+  --text-primary: #4A5568;
+  --text-secondary: #718096;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Focus styles */
+body {
+  font-family: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Анимирани фонови частици (опционално) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(124, 156, 191, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(184, 169, 201, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(143, 184, 160, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+  animation: floatParticles 20s ease-in-out infinite;
+}
+
+@keyframes floatParticles {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-20px); }
+}
+
+/* Фокус стилове - меки градиенти */
 :focus {
   outline: none;
 }
 
 :focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 3px solid rgba(124, 156, 191, 0.5);
+  outline-offset: 4px;
+  border-radius: 12px;
 }
 
-/* Custom scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: rgba(226, 232, 240, 0.5);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--calm-blue), var(--calm-lavender));
   border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #db2777 100%);
+  background: linear-gradient(135deg, #5A7A99, #9580AB);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
-/* Smooth transitions */
+/* Smooth transitions за всички елементи */
 * {
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
 }
 
-/* Remove default link styles */
+/* Основни контейнери */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  min-height: calc(100vh - 80px);
+}
+
+/* Линкове */
 a {
   text-decoration: none;
-  color: #030001;
+  color: var(--calm-blue);
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--calm-lavender);
+}
+
+/* Глобални класове за градиенти */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--calm-blue) 0%, var(--calm-lavender) 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, var(--calm-sage) 0%, var(--calm-sky) 100%);
+}
+
+.gradient-warm {
+  background: linear-gradient(135deg, var(--calm-peach) 0%, #F9D9C5 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  main {
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* Selection цветове */
+::selection {
+  background: rgba(124, 156, 191, 0.3);
+  color: var(--text-primary);
+}
+
+::-moz-selection {
+  background: rgba(124, 156, 191, 0.3);
+  color: var(--text-primary);
+}
+
+/* Disable text selection for buttons */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 3px solid rgba(124, 156, 191, 0.3);
+  border-top-color: var(--calm-blue);
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
 }

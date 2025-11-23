@@ -1,4 +1,4 @@
-// src/components/MoodTracker.jsx - С AI АНАЛИЗ
+// src/components/MoodTracker.jsx - Responsive + AI Анализ
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -7,9 +7,10 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Button,
-  Chip
+  Chip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 
 import {
@@ -22,7 +23,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Brain, TrendingUp, TrendingDown, Minus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getEmotions } from '../services/api';
 import { useAnonymous } from "../context/AnonymousContext";
@@ -30,6 +31,9 @@ import axios from 'axios';
 
 export default function MoodTracker() {
   const { userId } = useAnonymous();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,6 +42,12 @@ export default function MoodTracker() {
   const [aiAnalysis, setAiAnalysis] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  
+  // Отделни AI анализи за настроение и енергия
+  const [moodAnalysis, setMoodAnalysis] = useState('');
+  const [energyAnalysis, setEnergyAnalysis] = useState('');
+  const [moodAiLoading, setMoodAiLoading] = useState(false);
+  const [energyAiLoading, setEnergyAiLoading] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -45,17 +55,24 @@ export default function MoodTracker() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getEmotions(userId);
-
-        const chartData = response.data
+        const emotions = await getEmotions(userId);
+        
+        console.log("📊 Emotions:", emotions);
+        
+        if (!Array.isArray(emotions)) {
+          console.error("❌ Backend returned not an array:", emotions);
+          return;
+        }
+        
+        const chartData = emotions
           .map(item => ({
-            date: new Date(item.timestamp).toLocaleDateString('bg-BG', {
+            date: new Date(item.timestamp || item.date).toLocaleDateString('bg-BG', {
               day: 'numeric',
               month: 'short'
             }),
             mood: item.mood,
             energy: item.energy,
-            timestamp: item.timestamp,
+            timestamp: item.timestamp || item.date,
             note: item.note
           }))
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -72,7 +89,7 @@ export default function MoodTracker() {
     fetchData();
   }, [userId]);
 
-  // 🤖 AI АНАЛИЗ ФУНКЦИЯ (работи от 3+ записа)
+  // 🤖 ОБЩ AI АНАЛИЗ
   const analyzeWithAI = async () => {
     if (data.length < 3) {
       setError('Необходими са поне 3 записа за AI анализ.');
@@ -83,8 +100,7 @@ export default function MoodTracker() {
     setError('');
 
     try {
-      // Подготовка на данните за AI
-      const recentData = data.slice(-14); // последните 14 записа
+      const recentData = data.slice(-14);
       
       const avgMood = (recentData.reduce((sum, d) => sum + d.mood, 0) / recentData.length).toFixed(1);
       const avgEnergy = (recentData.reduce((sum, d) => sum + d.energy, 0) / recentData.length).toFixed(1);
@@ -97,7 +113,6 @@ export default function MoodTracker() {
         ? recentData[recentData.length - 1].energy - recentData[0].energy 
         : 0;
 
-      // Съставяне на промпт за AI
       const prompt = `Ти си професионален психолог. Анализирай следните данни за настроение и енергия на пациент за последните ${recentData.length} дни:
 
 Средно настроение: ${avgMood}/5
@@ -114,7 +129,6 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
 3. Конкретни препоръки за подобрение
 4. Позитивна бележка или окуражаване`;
 
-      // Извикванеѝ на API
       const response = await axios.post(
         'http://localhost:5000/api/chat/ai',
         { message: prompt }
@@ -133,12 +147,101 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
     }
   };
 
-  // Изчисляване на тренд (работи от 2+ записа)
+  // 🎭 AI АНАЛИЗ НА НАСТРОЕНИЕТО
+  const analyzeMoodWithAI = async () => {
+    if (data.length < 2) {
+      setError('Необходими са поне 2 записа за анализ.');
+      return;
+    }
+
+    setMoodAiLoading(true);
+    setError('');
+
+    try {
+      const recentData = data.slice(-14);
+      const avgMood = (recentData.reduce((sum, d) => sum + d.mood, 0) / recentData.length).toFixed(1);
+      const minMood = Math.min(...recentData.map(d => d.mood));
+      const maxMood = Math.max(...recentData.map(d => d.mood));
+      const moodVariance = (maxMood - minMood).toFixed(1);
+
+      const prompt = `Ти си психолог специалист по емоционално здраве. Анализирай САМО настроението на пациент:
+
+Средно настроение: ${avgMood}/5
+Минимално: ${minMood}/5, Максимално: ${maxMood}/5
+Вариация: ${moodVariance} точки
+
+Последни ${Math.min(7, recentData.length)} записа:
+${recentData.slice(-7).map(d => `${d.date}: ${d.mood}/5${d.note ? ` - "${d.note}"` : ''}`).join('\n')}
+
+Дай кратък анализ (до 100 думи) на български:
+- Какво показва настроението?
+- Има ли притеснителни модели?
+- Една конкретна препоръка за подобрение на настроението.`;
+
+      const response = await axios.post(
+        'http://localhost:5000/api/chat/ai',
+        { message: prompt }
+      );
+
+      setMoodAnalysis(response.data?.reply || 'Няма отговор.');
+
+    } catch (err) {
+      console.error('Mood AI Error:', err);
+      setError('Грешка при анализ на настроението.');
+    } finally {
+      setMoodAiLoading(false);
+    }
+  };
+
+  // ⚡ AI АНАЛИЗ НА ЕНЕРГИЯТА
+  const analyzeEnergyWithAI = async () => {
+    if (data.length < 2) {
+      setError('Необходими са поне 2 записа за анализ.');
+      return;
+    }
+
+    setEnergyAiLoading(true);
+    setError('');
+
+    try {
+      const recentData = data.slice(-14);
+      const avgEnergy = (recentData.reduce((sum, d) => sum + d.energy, 0) / recentData.length).toFixed(1);
+      const minEnergy = Math.min(...recentData.map(d => d.energy));
+      const maxEnergy = Math.max(...recentData.map(d => d.energy));
+
+      const prompt = `Ти си специалист по енергиен мениджмънт и wellness. Анализирай САМО енергийните нива на пациент:
+
+Средна енергия: ${avgEnergy}/5
+Минимална: ${minEnergy}/5, Максимална: ${maxEnergy}/5
+
+Последни ${Math.min(7, recentData.length)} записа:
+${recentData.slice(-7).map(d => `${d.date}: Енергия ${d.energy}/5`).join('\n')}
+
+Дай кратък анализ (до 100 думи) на български:
+- Какво показват енергийните нива?
+- Има ли признаци на изтощение или дисбаланс?
+- Една конкретна препоръка за повишаване на енергията (сън, хранене, движение).`;
+
+      const response = await axios.post(
+        'http://localhost:5000/api/chat/ai',
+        { message: prompt }
+      );
+
+      setEnergyAnalysis(response.data?.reply || 'Няма отговор.');
+
+    } catch (err) {
+      console.error('Energy AI Error:', err);
+      setError('Грешка при анализ на енергията.');
+    } finally {
+      setEnergyAiLoading(false);
+    }
+  };
+
+  // Изчисляване на тренд
   const getTrend = (dataKey) => {
-    if (data.length < 2) return null; // Скриваме при < 2 записа
+    if (data.length < 2) return null;
     
     if (data.length < 7) {
-      // При 2-6 записа: сравняваме първия с последния
       const first = data[0][dataKey];
       const last = data[data.length - 1][dataKey];
       const diff = last - first;
@@ -148,12 +251,10 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
       return { icon: Minus, color: '#6b7280', text: 'Стабилно' };
     }
     
-    // При 7+ записа: сравняваме последните 7 със предишните 7
     const recent = data.slice(-7);
     const older = data.slice(-14, -7);
     
     if (older.length === 0) {
-      // Ако нямаме 14+ записа, сравняваме първата половина с втората
       const mid = Math.floor(data.length / 2);
       const firstHalf = data.slice(0, mid);
       const secondHalf = data.slice(mid);
@@ -211,8 +312,12 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
   }
 
   return (
-    <Box sx={{ p: 4, maxWidth: '1400px', mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }} align="center">
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1400px', mx: 'auto' }}>
+      <Typography 
+        variant={isMobile ? "h5" : "h4"} 
+        sx={{ mb: 3, fontWeight: 700 }} 
+        align="center"
+      >
         📈 Промени във вашето настроение и енергичност
       </Typography>
 
@@ -221,14 +326,14 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
           <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       ) : data.length === 0 ? (
         <Alert severity="info">
           Няма записани данни. Започнете да споделяте емоциите си! 😊
         </Alert>
       ) : (
         <>
-          {/* ---------- AI АНАЛИЗ БУТОН (показва се при 3+ записа) ---------- */}
+          {/* ---------- ОБЩ AI АНАЛИЗ БУТОН ---------- */}
           {data.length >= 3 && (
             <Box sx={{ mb: 4, textAlign: 'center' }}>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -250,13 +355,13 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
                     }
                   }}
                 >
-                  {aiLoading ? 'Анализирам...' : ' AI Анализ на напредъка'}
+                  {aiLoading ? 'Анализирам...' : '🧠 Пълен AI Анализ'}
                 </Button>
               </motion.div>
             </Box>
           )}
 
-          {/* ---------- AI АНАЛИЗ РЕЗУЛТАТ ---------- */}
+          {/* ---------- ОБЩ AI АНАЛИЗ РЕЗУЛТАТ ---------- */}
           {showAnalysis && aiAnalysis && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -266,7 +371,7 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
               <Paper
                 elevation={6}
                 sx={{
-                  p: 4,
+                  p: { xs: 2, md: 4 },
                   mb: 4,
                   borderRadius: 4,
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -302,7 +407,7 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
                       lineHeight: 1.8,
                       fontSize: '1.05rem',
                       whiteSpace: 'pre-line',
-                      textAlign: 'center'   // <<< ТУК ДОБАВИХ ЦЕНТРИРАН ТЕКСТ
+                      textAlign: 'center'
                     }}
                   >
                     {aiAnalysis}
@@ -312,141 +417,196 @@ ${recentData.slice(-7).map(d => `${d.date}: Настроение ${d.mood}/5, Е
             </motion.div>
           )}
 
-          {/* ---------- ТРЕНД ИНДИКАТОРИ (показват се при 2+ записа) ---------- */}
+          {/* ---------- ТРЕНД ИНДИКАТОРИ ---------- */}
           {moodTrend && energyTrend && (
             <Box
               sx={{
                 display: 'flex',
                 justifyContent: 'center',
-                gap: 4,
+                gap: { xs: 2, md: 4 },
                 mb: 4,
                 flexWrap: 'wrap'
               }}
             >
-              {/* ТРЕНД НА НАСТРОЕНИЕТО */}
-              <Paper
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  textAlign: 'center',
-                  width: 300
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  😊 Тренд на настроението
+              <Paper sx={{ p: 2, borderRadius: 3, textAlign: 'center', minWidth: 150 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  😊 Настроение
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                  <moodTrend.icon size={32} color={moodTrend.color} />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  <moodTrend.icon size={24} color={moodTrend.color} />
                   <Chip
                     label={moodTrend.text}
-                    sx={{
-                      fontWeight: 600,
-                      bgcolor: `${moodTrend.color}20`,
-                      color: moodTrend.color
-                    }}
+                    size="small"
+                    sx={{ fontWeight: 600, bgcolor: `${moodTrend.color}20`, color: moodTrend.color }}
                   />
                 </Box>
               </Paper>
 
-              {/* ТРЕНД НА ЕНЕРГИЯТА */}
-              <Paper
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  textAlign: 'center',
-                  width: 300
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  ⚡ Тренд на енергията
+              <Paper sx={{ p: 2, borderRadius: 3, textAlign: 'center', minWidth: 150 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  ⚡ Енергия
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                  <energyTrend.icon size={32} color={energyTrend.color} />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  <energyTrend.icon size={24} color={energyTrend.color} />
                   <Chip
                     label={energyTrend.text}
-                    sx={{
-                      fontWeight: 600,
-                      bgcolor: `${energyTrend.color}20`,
-                      color: energyTrend.color
-                    }}
+                    size="small"
+                    sx={{ fontWeight: 600, bgcolor: `${energyTrend.color}20`, color: energyTrend.color }}
                   />
                 </Box>
               </Paper>
             </Box>
           )}
           
-          {/* ---------- ГРАФИКИ ---------- */}
-          <Grid container spacing={4}>
+          {/* ---------- ГРАФИКИ - RESPONSIVE GRID ---------- */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 3,
+              mb: 4
+            }}
+          >
             {/* ГРАФИКА 1: НАСТРОЕНИЕ */}
-            <Grid item xs={12} md={6} lg={6} xl={6} sx={{ minWidth: '575px' }}>
-              <Paper
-                sx={{
-                  p: 4,
-                  borderRadius: 4,
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f4f4ff 100%)'
-                }}
-              >
-                <Typography variant="h6" align="center" sx={{ mb: 2, fontWeight: 600 }}>
-                  😊 Настроение
-                </Typography>
+            <Paper
+              sx={{
+                p: { xs: 2, md: 3 },
+                borderRadius: 4,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f4f4ff 100%)'
+              }}
+            >
+              <Typography variant="h6" align="center" sx={{ mb: 2, fontWeight: 600 }}>
+                😊 Настроение
+              </Typography>
 
-                <Box sx={{ width: '100%', height: 300 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={data}>
-                      <CartesianGrid stroke="#ddd" strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Line
-                        type="monotone"
-                        dataKey="mood"
-                        stroke="#7b4bff"
-                        strokeWidth={4}
-                        dot={{ r: 6, fill: '#fff', strokeWidth: 2, stroke: '#7b4bff' }}
-                        activeDot={{ r: 9 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+              <Box sx={{ width: '100%', height: { xs: 250, md: 300 } }}>
+                <ResponsiveContainer>
+                  <LineChart data={data}>
+                    <CartesianGrid stroke="#ddd" strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="mood"
+                      stroke="#7b4bff"
+                      strokeWidth={3}
+                      dot={{ r: 5, fill: '#fff', strokeWidth: 2, stroke: '#7b4bff' }}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+
+              {/* AI бутон за настроение */}
+              {data.length >= 2 && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Sparkles size={16} />}
+                    onClick={analyzeMoodWithAI}
+                    disabled={moodAiLoading}
+                    sx={{
+                      borderColor: '#7b4bff',
+                      color: '#7b4bff',
+                      '&:hover': { borderColor: '#5a2bdf', bgcolor: 'rgba(123,75,255,0.05)' }
+                    }}
+                  >
+                    {moodAiLoading ? 'Анализирам...' : 'AI Анализ'}
+                  </Button>
                 </Box>
-              </Paper>
-            </Grid>
+              )}
+
+              {/* AI анализ резултат за настроение */}
+              {moodAnalysis && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(123,75,255,0.08)',
+                    border: '1px solid rgba(123,75,255,0.2)'
+                  }}
+                >
+                  <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                    {moodAnalysis}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
 
             {/* ГРАФИКА 2: ЕНЕРГИЯ */}
-            <Grid item xs={12} md={6} lg={6} xl={6} sx={{ minWidth: '575px' }}>
-              <Paper
-                sx={{
-                  p: 4,
-                  borderRadius: 4,
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #eafff4 100%)'
-                }}
-              >
-                <Typography variant="h6" align="center" sx={{ mb: 2, fontWeight: 600 }}>
-                  ⚡ Енергичност
-                </Typography>
+            <Paper
+              sx={{
+                p: { xs: 2, md: 3 },
+                borderRadius: 4,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                background: 'linear-gradient(135deg, #ffffff 0%, #eafff4 100%)'
+              }}
+            >
+              <Typography variant="h6" align="center" sx={{ mb: 2, fontWeight: 600 }}>
+                ⚡ Енергичност
+              </Typography>
 
-                <Box sx={{ width: '100%', height: 300 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={data}>
-                      <CartesianGrid stroke="#ddd" strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                      <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Line
-                        type="monotone"
-                        dataKey="energy"
-                        stroke="#10b981"
-                        strokeWidth={4}
-                        dot={{ r: 6, fill: '#fff', strokeWidth: 2, stroke: '#10b981' }}
-                        activeDot={{ r: 9 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+              <Box sx={{ width: '100%', height: { xs: 250, md: 300 } }}>
+                <ResponsiveContainer>
+                  <LineChart data={data}>
+                    <CartesianGrid stroke="#ddd" strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="energy"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      dot={{ r: 5, fill: '#fff', strokeWidth: 2, stroke: '#10b981' }}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+
+              {/* AI бутон за енергия */}
+              {data.length >= 2 && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Sparkles size={16} />}
+                    onClick={analyzeEnergyWithAI}
+                    disabled={energyAiLoading}
+                    sx={{
+                      borderColor: '#10b981',
+                      color: '#10b981',
+                      '&:hover': { borderColor: '#059669', bgcolor: 'rgba(16,185,129,0.05)' }
+                    }}
+                  >
+                    {energyAiLoading ? 'Анализирам...' : 'AI Анализ'}
+                  </Button>
                 </Box>
-              </Paper>
-            </Grid>
-          </Grid>
+              )}
+
+              {/* AI анализ резултат за енергия */}
+              {energyAnalysis && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(16,185,129,0.08)',
+                    border: '1px solid rgba(16,185,129,0.2)'
+                  }}
+                >
+                  <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                    {energyAnalysis}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          </Box>
         </>
       )}
     </Box>

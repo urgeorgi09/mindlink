@@ -1,46 +1,143 @@
-import Journal from "../models/Journal.js";
-import UserStats from "../models/UserStats.js";
-import { checkUserBadges } from "../utils/checkUserBadges.js";
+import JournalEntry from '../models/Journal.js';
+import User from '../models/User.js';
+import { encrypt, decrypt } from '../utils/crypto.js';
 
+/**
+ * POST /api/journal
+ * Създава нов дневников запис
+ */
 export const createJournalEntry = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { prompt, content, tags = [], isPrivate = true, wordCount = 0 } = req.body;
+    const { 
+      userId, 
+      prompt, 
+      content, 
+      tags = [], 
+      isPrivate = true, 
+      wordCount = 0 
+    } = req.body;
 
-    const entry = await Journal.create({
-      userId,
-      prompt,
-      content,
-      tags,
-      isPrivate,
-      wordCount
+    if (!userId || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userId и content са задължителни' 
+      });
+    }
+
+    console.log('📤 Creating journal entry:', { 
+      userId, 
+      contentLength: content.length,
+      tags: tags.length,
+      wordCount 
     });
 
-    // update stats
-    await UserStats.findOneAndUpdate(
-      { userId },
-      { $inc: { journalEntries: 1 } },
-      { new: true, upsert: true }
+    // Криптира съдържанието
+    const textEnc = encrypt(content);
+
+    // Криптира prompt ако съществува
+    const promptEnc = prompt ? encrypt(prompt) : null;
+
+    // Създава запис
+    const entry = await JournalEntry.create({
+      userId,
+      promptEnc,
+      textEnc,
+      tags,
+      isPrivate,
+      wordCount,
+      createdAt: new Date()
+    });
+
+    console.log('✅ Journal entry created:', entry._id);
+
+    // Обновява user stats
+    await User.findByIdAndUpdate(
+      userId,
+      { 
+        $inc: { 'stats.totalJournalEntries': 1 },
+        $set: { lastActive: new Date() }
+      },
+      { upsert: true }
     );
 
-    const newBadges = await checkUserBadges(userId);
+    // Връща декриптирана версия
+    res.status(201).json({
+      success: true,
+      entry: {
+        _id: entry._id,
+        userId: entry.userId,
+        prompt: prompt || '',
+        content: content,
+        tags: entry.tags,
+        isPrivate: entry.isPrivate,
+        wordCount: entry.wordCount,
+        date: entry.createdAt,
+        createdAt: entry.createdAt
+      }
+    });
 
-    res.status(201).json({ success: true, entry, newBadges });
   } catch (err) {
-    console.error("Journal save error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('❌ Journal save error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Грешка при запазване на дневник',
+      details: err.message 
+    });
   }
 };
 
+/**
+ * GET /api/journal/:userId
+ * Зарежда дневникови записи
+ */
 export const getJournalEntries = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { userId } = req.params;
+    const { limit = 50 } = req.query;
 
-    const entries = await Journal.find({ userId }).sort({ createdAt: -1 });
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userId е задължителен' 
+      });
+    }
 
-    res.status(200).json({ success: true, entries });
+    console.log('📥 Fetching journal entries for user:', userId);
+
+    const entries = await JournalEntry
+      .find({ userId })
+      .sort({ createdAt: -1 }) // Най-новите първи
+      .limit(parseInt(limit))
+      .lean();
+
+    console.log(`✅ Found ${entries.length} journal entries`);
+
+    // Декриптира записите
+    const decryptedEntries = entries.map(entry => ({
+      _id: entry._id,
+      userId: entry.userId,
+      prompt: entry.promptEnc ? decrypt(entry.promptEnc) : '',
+      content: decrypt(entry.textEnc),
+      tags: entry.tags || [],
+      isPrivate: entry.isPrivate,
+      wordCount: entry.wordCount,
+      date: entry.createdAt,
+      createdAt: entry.createdAt
+    }));
+
+    res.json({
+      success: true,
+      entries: decryptedEntries
+    });
+
   } catch (err) {
-    console.error("Get journal error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('❌ Get journal error:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Грешка при зареждане на дневник',
+      details: err.message 
+    });
   }
 };
+
+export default { createJournalEntry, getJournalEntries };
