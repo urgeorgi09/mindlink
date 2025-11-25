@@ -1,6 +1,6 @@
-// controllers/chatController.js
 import ChatMessage from '../models/ChatMessage.js';
 import User from '../models/User.js';
+import { encrypt, decrypt } from '../utils/crypto.js';
 
 /**
  * GET /api/chat/:userId
@@ -22,25 +22,26 @@ export const getChatMessages = async (req, res) => {
 
     const messages = await ChatMessage
       .find({ userId })
-      .sort({ createdAt: 1 }) // Най-старите първи (за хронология)
+      .sort({ timestamp: 1 })
       .limit(parseInt(limit))
       .lean();
 
     console.log(`✅ Found ${messages.length} messages`);
 
-    // Форматира съобщенията
-    const formattedMessages = messages.map(msg => ({
+    // Декриптира съобщенията
+    const decryptedMessages = messages.map(msg => ({
       _id: msg._id,
       userId: msg.userId,
-      message: msg.message,
-      isAi: msg.isAi,
-      sentiment: msg.sentiment,
-      timestamp: msg.createdAt
+      message: decrypt(msg.contentEnc),
+      isAi: msg.role === 'assistant',
+      role: msg.role,
+      timestamp: msg.timestamp,
+      createdAt: msg.timestamp
     }));
 
     res.json({
       success: true,
-      messages: formattedMessages
+      messages: decryptedMessages
     });
 
   } catch (err) {
@@ -59,12 +60,22 @@ export const getChatMessages = async (req, res) => {
  */
 export const createChatMessage = async (req, res) => {
   try {
-    const { userId, message, isAi = false, sentiment = 'neutral' } = req.body;
+    // Вземи userId от header (автоматично добавен от axios)
+    const userId = req.headers['x-ml-user'];
+    const { message, isAi = false } = req.body;
 
-    if (!userId || !message) {
+    // Валидация
+    if (!userId) {
       return res.status(400).json({ 
         success: false, 
-        error: 'userId и message са задължителни' 
+        error: 'userId липсва (header x-ml-user)' 
+      });
+    }
+
+    if (!message) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'message е задължително' 
       });
     }
 
@@ -74,42 +85,49 @@ export const createChatMessage = async (req, res) => {
       messageLength: message.length 
     });
 
-    // Създава съобщение с правилните полета от модела
+    // Криптира съобщението
+    const contentEnc = encrypt(message);
+    
+    // Определи role
+    const role = isAi ? 'assistant' : 'user';
+
+    console.log('🔐 Encrypted data:', {
+      contentEnc: contentEnc ? 'exists' : 'missing',
+      role: role
+    });
+
+    // Създава съобщение
     const msg = await ChatMessage.create({
-      userId,
-      message: message,
-      isAi: isAi,
-      sentiment: sentiment
+      userId: userId,
+      role: role,
+      contentEnc: contentEnc,
+      timestamp: new Date()
     });
 
     console.log('✅ Message created:', msg._id);
 
     // Обновява stats само за user съобщения
     if (!isAi) {
-      try {
-        await User.findByIdAndUpdate(
-          userId,
-          { 
-            $inc: { 'stats.totalChatMessages': 1 },
-            $set: { lastActive: new Date() }
-          },
-          { upsert: true }
-        );
-      } catch (userErr) {
-        // Игнорирай грешки при обновяване на user stats
-        console.log('⚠️ User stats update skipped:', userErr.message);
-      }
+      await User.findByIdAndUpdate(
+        userId,
+        { 
+          $inc: { 'stats.totalChatMessages': 1 },
+          $set: { lastActive: new Date() }
+        },
+        { upsert: true }
+      );
     }
 
+    // Връща декриптирана версия
     res.status(201).json({
       success: true,
       msg: {
         _id: msg._id,
         userId: msg.userId,
-        message: msg.message,
-        isAi: msg.isAi,
-        sentiment: msg.sentiment,
-        timestamp: msg.createdAt
+        message: message,
+        isAi: isAi,
+        role: msg.role,
+        timestamp: msg.timestamp
       }
     });
 
@@ -123,75 +141,4 @@ export const createChatMessage = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/chat/:userId
- * Изтрива всички съобщения на потребител
- */
-export const deleteChatMessages = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userId е задължителен' 
-      });
-    }
-
-    const result = await ChatMessage.deleteMany({ userId });
-
-    console.log(`🗑️ Deleted ${result.deletedCount} messages for user:`, userId);
-
-    res.json({
-      success: true,
-      deletedCount: result.deletedCount
-    });
-
-  } catch (err) {
-    console.error('❌ Chat delete error:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Грешка при изтриване на съобщенията',
-      details: err.message 
-    });
-  }
-};
-
-/**
- * GET /api/chat/:userId/stats
- * Връща статистика за чата
- */
-export const getChatStats = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userId е задължителен' 
-      });
-    }
-
-    const stats = await ChatMessage.getStats(userId);
-
-    res.json({
-      success: true,
-      stats
-    });
-
-  } catch (err) {
-    console.error('❌ Chat stats error:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Грешка при зареждане на статистиката',
-      details: err.message 
-    });
-  }
-};
-
-export default { 
-  getChatMessages, 
-  createChatMessage, 
-  deleteChatMessages,
-  getChatStats 
-};
+export default { getChatMessages, createChatMessage };

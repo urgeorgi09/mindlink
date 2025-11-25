@@ -50,7 +50,7 @@ export default function Dashboard() {
             fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' }
           }}
         >
-          Твоята Дъска
+          Твоето Тъбло
         </Typography>
 
         <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>

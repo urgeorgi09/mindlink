@@ -30,14 +30,14 @@ export default function App() {
                 <h2>MindLink+</h2>
                 <div style={{ display: "flex", gap: "15px" }}>
                     <Link to="/" style={{ color: "white" }}>Home</Link>
-                    <Link to="/dashboard" style={{ color: "white" }}>Дъска</Link>
+                    <Link to="/dashboard" style={{ color: "white" }}>Тъбло</Link>
                     <Link to="/journal" style={{ color: "white" }}>Дневник</Link>
 
                     {/* NEW LINKS */}
                     <Link to="/chat" style={{ color: "white" }}>AI чат</Link>
-                    <Link to="/mood" style={{ color: "white" }}>Емоционален трекер</Link>
                     <Link to="/emotions" style={{ color: "white" }}>Публикуване на емоция</Link>
-                </div>
+                    <Link to="/mood" style={{ color: "white" }}>Емоционален трекер</Link>
+                </div>  
             </nav>
 
             {/* ===== CONTENT ===== */}
