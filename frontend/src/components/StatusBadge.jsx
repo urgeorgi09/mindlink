@@ -1,123 +1,91 @@
-// components/StatusBadge.js
-// Компонент за показване на онлайн/офлайн статус
+// frontend/src/components/StatusBadge.jsx
+import React from 'react';
 
-import React from "react";
+export const StatusBadge = ({ online, lastSeen, size = 'medium', showText = true }) => {
+  // Определяме размера
+  const sizeMap = {
+    small: { dot: 8, text: '12px' },
+    medium: { dot: 12, text: '13px' },
+    large: { dot: 16, text: '14px' }
+  };
+  
+  const dimensions = sizeMap[size] || sizeMap.medium;
 
-// ──────────────────────────────────────────────
-// Помощна функция - форматира "последно виждан"
-// ──────────────────────────────────────────────
-function formatLastSeen(isoString) {
-  if (!isoString) return null;
+  // Форматиране на "последно виждан"
+  const formatLastSeen = (isoString) => {
+    if (!isoString) return null;
+    
+    const diff = Date.now() - new Date(isoString);
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (mins < 1) return 'току що';
+    if (mins < 60) return `преди ${mins} мин`;
+    if (hours < 24) return `преди ${hours} ч`;
+    return `преди ${days} дни`;
+  };
 
-  const date = new Date(isoString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "току що";
-  if (diffMins < 60) return `преди ${diffMins} мин`;
-  if (diffHours < 24) return `преди ${diffHours} ч`;
-  if (diffDays === 1) return "вчера";
-  return `преди ${diffDays} дни`;
-}
-
-// ──────────────────────────────────────────────
-// StatusDot - малка цветна точка (за chat header-и)
-// ──────────────────────────────────────────────
-export function StatusDot({ online, size = 10 }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: online ? "#22c55e" : "#9ca3af",
-        boxShadow: online ? "0 0 0 2px rgba(34,197,94,0.3)" : "none",
-        flexShrink: 0,
-        // Пулсираща анимация само когато е онлайн
-        animation: online ? "pulse-green 2s infinite" : "none",
-      }}
-    />
-  );
-}
-
-// ──────────────────────────────────────────────
-// StatusBadge - текст + точка (за списъци с терапевти)
-// ──────────────────────────────────────────────
-export function StatusBadge({ online, lastSeen, loading = false }) {
-  if (loading) {
+  if (!showText) {
+    // Само точката
     return (
-      <span style={{ fontSize: "13px", color: "#9ca3af" }}>
-        <span
-          style={{
-            display: "inline-block",
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "#d1d5db",
-            marginRight: 5,
-          }}
-        />
-        Зарежда...
-      </span>
-    );
-  }
-
-  if (online) {
-    return (
-      <span
+      <div
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          fontSize: "13px",
-          color: "#16a34a",
-          fontWeight: 600,
+          width: `${dimensions.dot}px`,
+          height: `${dimensions.dot}px`,
+          borderRadius: '50%',
+          background: online ? '#22c55e' : '#9ca3af',
+          border: '2px solid white',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          animation: online ? 'pulse-green 2s infinite' : 'none'
         }}
-      >
-        <StatusDot online={true} size={8} />
-        Онлайн
-      </span>
+        title={online ? 'Онлайн' : `Офлайн${lastSeen ? ` • ${formatLastSeen(lastSeen)}` : ''}`}
+      />
     );
   }
 
-  const lastSeenText = formatLastSeen(lastSeen);
-
+  // С текст
   return (
-    <span
+    <div
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-        fontSize: "13px",
-        color: "#6b7280",
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '4px 10px',
+        borderRadius: '12px',
+        background: online ? 'rgba(34, 197, 94, 0.1)' : 'rgba(156, 163, 175, 0.1)',
+        fontSize: dimensions.text,
       }}
     >
-      <StatusDot online={false} size={8} />
-      {lastSeenText ? `Последно: ${lastSeenText}` : "Офлайн"}
-    </span>
+      <div
+        style={{
+          width: `${dimensions.dot}px`,
+          height: `${dimensions.dot}px`,
+          borderRadius: '50%',
+          background: online ? '#22c55e' : '#9ca3af',
+          animation: online ? 'pulse-green 2s infinite' : 'none'
+        }}
+      />
+      <span style={{ color: online ? '#16a34a' : '#6b7280', fontWeight: 500 }}>
+        {online ? 'онлайн' : lastSeen ? formatLastSeen(lastSeen) : 'офлайн'}
+      </span>
+    </div>
   );
-}
+};
 
-// ──────────────────────────────────────────────
-// CSS анимация за пулсиране - добави в App.css или index.css
-// ──────────────────────────────────────────────
-const pulseStyle = `
-  @keyframes pulse-green {
-    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
-    70%  { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+// CSS анимация (добави в App.css или global styles)
+const globalStyles = `
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
 `;
 
-// Inject стиловете автоматично
-if (typeof document !== "undefined") {
-  const styleEl = document.createElement("style");
-  styleEl.textContent = pulseStyle;
-  document.head.appendChild(styleEl);
-}
-
-export default StatusBadge;
+// Експортваме и стиловете за вграждане в App
+export const StatusBadgeStyles = globalStyles;

@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -74,6 +73,7 @@ import therapistRoutes from './routes/therapistManagementRoutes.js';
 import therapistChatRoutes from './routes/therapistChatRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import presenceRoutes from './routes/presenceRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/emotions', emotionsRoutes);
@@ -84,6 +84,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/therapist', therapistRoutes);
 app.use('/api/therapist-chat', therapistChatRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/presence', presenceRoutes);
 
 // ==================== Health Check ====================
 app.get('/health', (req, res) => {
@@ -137,19 +138,6 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
-
-// ==================== MongoDB Connection ====================
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mindlink';
-
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    console.log('📍 Database:', mongoose.connection.name);
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
 
 // ==================== Start Server ====================
 const PORT = process.env.PORT || 5000;

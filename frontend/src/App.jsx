@@ -7,7 +7,8 @@ import "./styles/darkmode.css";
 
 import { AnonymousProvider, useAnonymous } from "./context/AnonymousContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
-import { useHeartbeat } from "./hooks/usePresence"; // <-- НОВО
+import { usePresence } from "./hooks/usePresence";
+import './styles/presence.css';
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
@@ -201,8 +202,7 @@ function AppContent() {
   const { userRole } = useAnonymous();
   const { darkMode, colors } = useTheme();
 
-  // ✅ НОВО: Пращай heartbeat за текущия логнат потребител
-  useHeartbeat();
+  usePresence();
 
   const getRoleGradient = () => {
     const isLoggedIn = localStorage.getItem("token");

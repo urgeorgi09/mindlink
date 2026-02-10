@@ -1,148 +1,135 @@
-// hooks/usePresence.js
-// Custom hook - управлява heartbeat и онлайн статуси
+// frontend/src/hooks/usePresence.js
+import { useState, useEffect } from 'react';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-
-const HEARTBEAT_INTERVAL_MS = 20 * 1000; // heartbeat на всеки 20 сек
-const POLL_INTERVAL_MS = 15 * 1000;      // проверявай статусите на всеки 15 сек
-
-// ──────────────────────────────────────────────
-// useHeartbeat - пращай "аз съм онлайн" до сървъра
-// Използвай го в App.js за логнатия потребител
-// ──────────────────────────────────────────────
-export function useHeartbeat() {
-  const intervalRef = useRef(null);
-
-  const sendHeartbeat = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      await fetch("/api/presence/heartbeat", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch {
-      // Silent fail - не прекъсвай UI при мрежова грешка
-    }
-  }, []);
-
-  const sendOffline = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      // Използваме sendBeacon за да гарантираме изпращане при затваряне на таба
-      navigator.sendBeacon(
-        "/api/presence/offline",
-        new Blob(
-          [JSON.stringify({ token })],
-          { type: "application/json" }
-        )
-      );
-    } catch {
-      // Fallback към fetch
-      await fetch("/api/presence/offline", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    }
-  }, []);
+// Hook за проверка на онлайн статус на ЕДИН потребител
+export const useUserStatus = (userId) => {
+  const [status, setStatus] = useState({
+    online: false,
+    lastSeen: null,
+    loading: true
+  });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!userId) {
+      setStatus({ online: false, lastSeen: null, loading: false });
+      return;
+    }
 
-    // Изпрати веднага при mount
-    sendHeartbeat();
-
-    // После на всеки 20 секунди
-    intervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
-
-    // При затваряне на таба/прозореца - изпрати offline
-    window.addEventListener("beforeunload", sendOffline);
-
-    // При смяна на visibility (tab switch)
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        sendHeartbeat();
+    const checkStatus = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/presence/status/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        setStatus({
+          online: data.online || false,
+          lastSeen: data.lastSeen || null,
+          loading: false
+        });
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        setStatus({
+          online: false,
+          lastSeen: null,
+          loading: false
+        });
       }
     };
-    document.addEventListener("visibilitychange", handleVisibility);
 
-    return () => {
-      clearInterval(intervalRef.current);
-      window.removeEventListener("beforeunload", sendOffline);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [sendHeartbeat, sendOffline]);
-
-  return { sendOffline };
-}
-
-// ──────────────────────────────────────────────
-// useUserStatus - проверявай статуса на един потребител
-// Използвай в PatientChat.js и TherapistChat.js
-// ──────────────────────────────────────────────
-export function useUserStatus(userId) {
-  const [status, setStatus] = useState({ online: false, lastSeen: null, loading: true });
-
-  const fetchStatus = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/presence/status/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setStatus({ online: data.online, lastSeen: data.lastSeen, loading: false });
-    } catch {
-      setStatus((s) => ({ ...s, loading: false }));
-    }
+    checkStatus();
+    const interval = setInterval(checkStatus, 10000); // Проверка на всеки 10 сек
+    return () => clearInterval(interval);
   }, [userId]);
 
-  useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
-
   return status;
-}
+};
 
-// ──────────────────────────────────────────────
-// useBatchStatus - проверявай статуса на много потребители
-// Използвай в PatientChatHub.js и TherapistChat.js (списъци)
-// ──────────────────────────────────────────────
-export function useBatchStatus(userIds) {
+// Hook за проверка на статуса на МНОГО потребители наведнъж (batch)
+export const useBatchStatus = (userIds) => {
   const [statuses, setStatuses] = useState({});
 
-  const fetchStatuses = useCallback(async () => {
-    if (!userIds || userIds.length === 0) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/presence/status/batch", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userIds }),
-      });
-      const data = await response.json();
-      setStatuses(data.statuses || {});
-    } catch {
-      // Silent fail
-    }
-  }, [JSON.stringify(userIds)]);
-
   useEffect(() => {
-    fetchStatuses();
-    const interval = setInterval(fetchStatuses, POLL_INTERVAL_MS);
+    if (!userIds || userIds.length === 0) {
+      setStatuses({});
+      return;
+    }
+
+    const checkStatuses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/presence/status/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ userIds })
+        });
+        const data = await response.json();
+        
+        // data.statuses е обект: { userId: { online, lastSeen }, ... }
+        setStatuses(data.statuses || {});
+      } catch (error) {
+        console.error('Error checking batch statuses:', error);
+        // При грешка, задаваме всички като offline
+        const fallback = {};
+        userIds.forEach(id => {
+          fallback[id] = { online: false, lastSeen: null };
+        });
+        setStatuses(fallback);
+      }
+    };
+
+    checkStatuses();
+    const interval = setInterval(checkStatuses, 10000); // Проверка на всеки 10 сек
     return () => clearInterval(interval);
-  }, [fetchStatuses]);
+  }, [JSON.stringify(userIds)]); // Dependency на JSON string за да work-ва с масиви
 
   return statuses;
-}
+};
+
+// Hook за изпращане на собствен heartbeat
+export const usePresence = () => {
+  useEffect(() => {
+    const sendHeartbeat = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch('/api/presence/heartbeat', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (error) {
+        // Silent fail - не е критично ако heartbeat не мине
+      }
+    };
+
+    // Изпращаме heartbeat веднага
+    sendHeartbeat();
+    
+    // После на всеки 20 секунди
+    const interval = setInterval(sendHeartbeat, 20000);
+    
+    // Cleanup при logout или затваряне на страницата
+    const handleUnload = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        // Използваме sendBeacon за да работи при затваряне на таб
+        navigator.sendBeacon(
+          '/api/presence/offline',
+          new Blob([JSON.stringify({})], { type: 'application/json' })
+        );
+      } catch {}
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+      // Маркираме като offline при unmount
+      handleUnload();
+    };
+  }, []);
+};

@@ -1,7 +1,7 @@
-// routes/presence.js
-// Добави това в твоя Express router
+// backend/routes/presenceRoutes.js
+import express from 'express';
+import { authenticateToken } from '../middleware/auth.js'; // Импортирай твоя auth middleware
 
-const express = require("express");
 const router = express.Router();
 
 // In-memory store за онлайн статуси
@@ -15,7 +15,7 @@ const ONLINE_THRESHOLD_MS = 30 * 1000;
 // POST /api/presence/heartbeat
 // Пращай го от frontend на всеки 20 секунди
 // ──────────────────────────────────────────────
-router.post("/heartbeat", authenticateToken, (req, res) => {
+router.post('/heartbeat', authenticateToken, (req, res) => {
   const userId = req.user.id;
   onlineUsers.set(userId, Date.now());
   res.json({ ok: true });
@@ -25,7 +25,7 @@ router.post("/heartbeat", authenticateToken, (req, res) => {
 // POST /api/presence/offline
 // Пращай го при logout или beforeunload
 // ──────────────────────────────────────────────
-router.post("/offline", authenticateToken, (req, res) => {
+router.post('/offline', authenticateToken, (req, res) => {
   const userId = req.user.id;
   onlineUsers.delete(userId);
   res.json({ ok: true });
@@ -35,7 +35,7 @@ router.post("/offline", authenticateToken, (req, res) => {
 // GET /api/presence/status/:userId
 // Проверява дали конкретен потребител е онлайн
 // ──────────────────────────────────────────────
-router.get("/status/:userId", authenticateToken, (req, res) => {
+router.get('/status/:userId', authenticateToken, (req, res) => {
   const targetId = parseInt(req.params.userId);
   const lastSeen = onlineUsers.get(targetId);
 
@@ -56,11 +56,11 @@ router.get("/status/:userId", authenticateToken, (req, res) => {
 // Проверява статуса на много потребители наведнъж
 // Body: { userIds: [1, 2, 3] }
 // ──────────────────────────────────────────────
-router.post("/status/batch", authenticateToken, (req, res) => {
+router.post('/status/batch', authenticateToken, (req, res) => {
   const { userIds } = req.body;
 
   if (!Array.isArray(userIds)) {
-    return res.status(400).json({ error: "userIds трябва да е масив" });
+    return res.status(400).json({ error: 'userIds трябва да е масив' });
   }
 
   const result = {};
@@ -92,10 +92,4 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-module.exports = router;
-
-// ══════════════════════════════════════════════
-// В твоя главен server.js/app.js добави:
-// ══════════════════════════════════════════════
-// const presenceRouter = require("./routes/presence");
-// app.use("/api/presence", presenceRouter);
+export default router;

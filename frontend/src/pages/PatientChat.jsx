@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useUserStatus } from "../hooks/usePresence";
 import { StatusBadge } from "../components/StatusBadge";
 
 const PatientChat = () => {
@@ -16,18 +17,28 @@ const PatientChat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [therapistStatus, setTherapistStatus] = useState({ online: false, lastSeen: null });
   const messagesEndRef = React.useRef(null);
   const typingTimeoutRef = React.useRef(null);
+  const messagesContainerRef = React.useRef(null);
+  const prevMessagesLengthRef = React.useRef(0);
+
+  // Реален онлайн статус
+  const therapistStatus = useUserStatus(therapist?.id);
 
   const emojis = ["😊", "😢", "😰", "😡", "❤️", "👍", "🙏", "💪", "🌟", "✨"];
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > prevMessagesLengthRef.current) {
+      prevMessagesLengthRef.current = messages.length;
+      scrollToBottom();
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -172,7 +183,6 @@ const PatientChat = () => {
       }));
 
       setMessages(formattedMessages);
-      setTimeout(() => scrollToBottom(), 50);
 
       if (data.isTyping !== undefined) setIsTyping(data.isTyping);
     } catch (error) {
@@ -250,19 +260,32 @@ const PatientChat = () => {
             onClick={() => navigate("/patient-chat")}
             style={{
               position: "absolute",
-              top: "10px",
-              left: "10px",
-              background: "rgba(255,255,255,0.2)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.3)",
-              padding: "8px 12px",
-              borderRadius: "8px",
+              top: "15px",
+              left: "15px",
+              background: "rgba(255,255,255,0.95)",
+              color: "#16a34a",
+              border: "none",
+              padding: "10px 16px",
+              borderRadius: "12px",
               cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 600,
+              fontSize: "15px",
+              fontWeight: 700,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateX(-3px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateX(0)";
+              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
             }}
           >
-            ← Назад
+            <span style={{ fontSize: "18px" }}>←</span> Назад
           </button>
 
           {unreadCount > 0 && (
@@ -350,6 +373,7 @@ const PatientChat = () => {
 
         {/* Съобщения */}
         <div
+          ref={messagesContainerRef}
           style={{
             flex: 1,
             overflowY: "auto",
