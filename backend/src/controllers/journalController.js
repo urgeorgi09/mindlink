@@ -1,4 +1,4 @@
-import JournalEntry from '../models/Journal.js';
+import JournalEntry from '../models/JournalEntry.js';
 import User from '../models/User.js';
 import { encrypt, decrypt } from '../utils/crypto.js';
 

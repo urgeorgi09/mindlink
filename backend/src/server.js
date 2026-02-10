@@ -13,6 +13,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://172.20.10.2:5173',
   'https://mindlinkplus.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -65,14 +66,24 @@ app.use('/api/', apiLimiter);
 
 // ==================== Routes ====================
 import emotionsRoutes from './routes/emotions.js';
-import chatRoutes from './routes/chat.js';
+
 import journalRoutes from './routes/journal.js';
 import userRoutes from './routes/user.js';
+import adminRoutes from './routes/adminRoutes.js';
+import therapistRoutes from './routes/therapistManagementRoutes.js';
+import therapistChatRoutes from './routes/therapistChatRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
+app.use('/api/auth', authRoutes);
 app.use('/api/emotions', emotionsRoutes);
-app.use('/api/chat', chatRoutes);
+
 app.use('/api/journal', journalRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/therapist', therapistRoutes);
+app.use('/api/therapist-chat', therapistChatRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ==================== Health Check ====================
 app.get('/health', (req, res) => {
@@ -88,10 +99,13 @@ app.get('/', (req, res) => {
     message: 'MindLink+ API',
     version: '1.0.0',
     endpoints: {
+      auth: '/api/auth',
       emotions: '/api/emotions',
-      chat: '/api/chat',
+
       journal: '/api/journal',
-      user: '/api/user'
+      user: '/api/user',
+      admin: '/api/admin',
+      therapist: '/api/therapist'
     }
   });
 });

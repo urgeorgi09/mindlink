@@ -1,73 +1,313 @@
-// src/pages/TherapistsPage.jsx - Fully Responsive
-import React, { useEffect, useState } from "react";
-import { Container, Grid, Typography, useMediaQuery, useTheme, Box } from "@mui/material";
-import TherapistCard from "../components/TherapistDirectory";
-import api from "../services/api";
+import React, { useState, useEffect } from "react";
+import TherapistProfile from "../components/TherapistProfile";
 
-export default function TherapistsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
+const TherapistsPage = () => {
+  const [therapists, setTherapists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTherapistId, setSelectedTherapistId] = useState(null);
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get("/therapists");
-        setList(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("Error loading therapists:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    fetchTherapists();
   }, []);
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-        py: { xs: 3, sm: 4, md: 6 }
-      }}
-    >
-      <Container sx={{ px: { xs: 2, sm: 3 } }}>
-        <Typography 
-          variant="h4" 
-          mb={2}
-          sx={{ fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}
-        >
-          Терапевти
-        </Typography>
-        <Typography 
-          color="text.secondary" 
-          mb={{ xs: 2, md: 3 }}
-          sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-        >
-          Избери терапевт от директорията. Може да филтрираш по град/специалност.
-        </Typography>
+  const fetchTherapists = async () => {
+    try {
+      const response = await fetch("/api/therapists");
+      const data = await response.json();
+      setTherapists(data.therapists || []);
+    } catch (error) {
+      console.error("Error fetching therapists:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
-          {list.map(t => (
-            <Grid key={t._id || t.id} item xs={12} sm={6} md={4}>
-              <TherapistCard therapist={t} />
-            </Grid>
+  const specialties = [
+    { value: "all", label: "Всички" },
+    { value: "Клиничен психолог", label: "Клинични психолози" },
+    { value: "Психотерапевт", label: "Психотерапевти" },
+    { value: "Детски психолог", label: "Детски психолози" },
+    { value: "Психиатър", label: "Психиатри" },
+  ];
+
+  const filteredTherapists =
+    selectedSpecialty === "all"
+      ? therapists
+      : therapists.filter((t) => t.specialty === selectedSpecialty);
+
+  const bookAppointment = async (therapist) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/therapist/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ therapistId: therapist.id }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        showSuccessPopup(`Заявката е изпратена към ${therapist.name}`);
+      } else {
+        alert(data.message || "Грешка при изпращане на заявката");
+      }
+    } catch (error) {
+      alert("Грешка в мрежата");
+    }
+  };
+
+  const showSuccessPopup = (message) => {
+    const popup = document.createElement("div");
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 10000;
+      text-align: center;
+      min-width: 300px;
+    `;
+
+    popup.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+      <h3 style="margin: 0 0 10px 0; color: #22c55e;">Успешно!</h3>
+      <p style="margin: 0; color: #6b7280;">${message}</p>
+    `;
+
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9999;
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+      document.body.removeChild(overlay);
+      document.body.removeChild(popup);
+    }, 2500);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <h2>Зареждане на терапевти...</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h1 style={{ color: "#22c55e", marginBottom: "10px" }}>🩺 Нашите терапевти</h1>
+        <p style={{ color: "#6b7280", fontSize: "18px" }}>
+          Намерете подходящия специалист за вашите нужди
+        </p>
+      </div>
+
+      {/* Филтър */}
+      <div style={{ marginBottom: "30px", textAlign: "center" }}>
+        <select
+          value={selectedSpecialty}
+          onChange={(e) => setSelectedSpecialty(e.target.value)}
+          style={{
+            padding: "12px 20px",
+            borderRadius: "8px",
+            border: "1px solid #d1d5db",
+            fontSize: "16px",
+            background: "white",
+          }}
+        >
+          {specialties.map((specialty) => (
+            <option key={specialty.value} value={specialty.value}>
+              {specialty.label}
+            </option>
           ))}
-        </Grid>
-        
-        {(!loading && list.length === 0) && (
-          <Typography 
-            mt={4} 
-            textAlign="center"
-            sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
+        </select>
+      </div>
+
+      {/* Списък с терапевти */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+          gap: "25px",
+        }}
+      >
+        {filteredTherapists.map((therapist) => (
+          <div
+            key={therapist.id}
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              padding: "25px",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #e5e7eb",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.1)";
+            }}
           >
-            Няма терапевти за показване.
-          </Typography>
-        )}
-      </Container>
-    </Box>
+            {/* Хедър */}
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
+              <div style={{ position: "relative", marginRight: "15px" }}>
+                <div
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    background: therapist.profileImage
+                      ? `url(${therapist.profileImage})`
+                      : "#f0fdf4",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: therapist.profileImage ? "0" : "30px",
+                  }}
+                >
+                  {!therapist.profileImage && "🩺"}
+                  {therapist.profileImage && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-2px",
+                        right: "-2px",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "10px",
+                        color: "white",
+                        border: "2px solid white",
+                      }}
+                    >
+                      🩺
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3
+                  style={{
+                    margin: "0 0 5px 0",
+                    color: "#1f2937",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                  onClick={() => setSelectedTherapistId(therapist.id)}
+                >
+                  {therapist.name}
+                </h3>
+                <p style={{ margin: "0", color: "#22c55e", fontWeight: 600 }}>
+                  {therapist.specialty}
+                </p>
+              </div>
+              <div
+                style={{
+                  background: therapist.available ? "#dcfce7" : "#fee2e2",
+                  color: therapist.available ? "#16a34a" : "#dc2626",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                {therapist.available ? "Свободен" : "Зает"}
+              </div>
+            </div>
+
+            {/* Информация */}
+            <div style={{ marginBottom: "15px" }}>
+              <p style={{ margin: "0 0 8px 0", color: "#6b7280" }}>📅 {therapist.experience}</p>
+              <p style={{ margin: "0 0 8px 0", color: "#6b7280" }}>
+                ⭐ {therapist.rating}/5.0 рейтинг
+              </p>
+              <p style={{ margin: "0 0 15px 0", color: "#6b7280" }}>💰 {therapist.price}</p>
+            </div>
+
+            {/* Бутони */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() => bookAppointment(therapist)}
+                disabled={!therapist.available}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  background: therapist.available ? "#22c55e" : "#9ca3af",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: therapist.available ? "pointer" : "not-allowed",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                }}
+              >
+                {therapist.available ? "📅 Запиши час" : "Недостъпен"}
+              </button>
+              <button
+                style={{
+                  padding: "12px 16px",
+                  background: "transparent",
+                  color: "#22c55e",
+                  border: "2px solid #22c55e",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                💬 Чат
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredTherapists.length === 0 && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            color: "#6b7280",
+          }}
+        >
+          <h3>Няма намерени терапевти</h3>
+          <p>Опитайте с друг филтър или се регистрирайте като терапевт</p>
+        </div>
+      )}
+
+      {/* Therapist Profile Modal */}
+      {selectedTherapistId && (
+        <TherapistProfile
+          therapistId={selectedTherapistId}
+          onClose={() => setSelectedTherapistId(null)}
+        />
+      )}
+    </div>
   );
-}
+};
+
+export default TherapistsPage;

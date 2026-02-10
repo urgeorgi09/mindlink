@@ -1,5 +1,10 @@
 {
+  "name": "mindlink-frontend",
+  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -12,5 +17,14 @@
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.0",
     "morgan": "^1.10.1"
-  }
-}
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.0.0"
+  },
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }}

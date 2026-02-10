@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Badge from '../../models/Badge.js';
-import connectDB from '../../config/database.js';
+import Badge from '../src/models/Badge.js';
+import connectDB from '../config/database.js';
 
 dotenv.config();
 

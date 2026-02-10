@@ -4,8 +4,6 @@ import { getOrCreateUserId } from '../utils/userId';
 // API Base URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-console.log('🌐 API URL:', API_URL);
-
 // Axios instance
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -15,34 +13,32 @@ const api = axios.create({
   timeout: 15000
 });
 
-// Request interceptor - добавя userId header
+// Request interceptor - добавя userId header и auth token
 api.interceptors.request.use(
   config => {
     const userId = getOrCreateUserId();
+    const token = localStorage.getItem('token');
+    
     config.headers['x-ml-user'] = userId;
-    console.log('📤 Request:', config.method.toUpperCase(), config.url, { userId });
+    config.headers['x-user-id'] = userId;
+    
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     return config;
   },
   error => {
-    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor - логване на грешки
+// Response interceptor - error handling
 api.interceptors.response.use(
   response => {
-    console.log('✅ Response:', response.config.url, response.status);
     return response;
   },
   error => {
-    console.error('❌ API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
-    
     // User-friendly error messages
     if (error.response) {
       const message = error.response.data?.error || error.response.data?.message || 'Грешка на сървъра';
@@ -65,9 +61,8 @@ api.interceptors.response.use(
 export const getEmotions = async (userId) => {
   try {
     const response = await api.get(`/emotions/${userId}`);
-    return response.data; // Връща масив директно
+    return response.data;
   } catch (error) {
-    console.error('Get emotions error:', error);
     throw error;
   }
 };
@@ -77,66 +72,15 @@ export const getEmotions = async (userId) => {
  */
 export const createEmotionPost = async (data) => {
   try {
-    // userId се добавя автоматично от interceptor в header
     const payload = {
       mood: Number(data.mood),
       energy: Number(data.energy),
       note: data.note || ''
     };
     
-    console.log('📤 Creating emotion:', payload);
-    
     const response = await api.post('/emotions', payload);
     return response.data;
   } catch (error) {
-    console.error('Create emotion error:', error);
-    throw error;
-  }
-};
-
-// ==================== CHAT API ====================
-
-/**
- * Зарежда чат съобщенията
- */
-export const getChatMessages = async (userId) => {
-  try {
-    const response = await api.get(`/chat/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Get chat messages error:', error);
-    throw error;
-  }
-};
-
-/**
- * Изпраща чат съобщение
- */
-export const sendChatMessage = async (data) => {
-  try {
-    const payload = {
-      userId: data.userId || getOrCreateUserId(),
-      message: data.message,
-      isAi: data.isAi || false
-    };
-    
-    const response = await api.post('/chat', payload);
-    return response.data;
-  } catch (error) {
-    console.error('Send chat message error:', error);
-    throw error;
-  }
-};
-
-/**
- * Получава AI отговор
- */
-export const getAIResponse = async (message) => {
-  try {
-    const response = await api.post('/chat/ai', { message });
-    return response.data;
-  } catch (error) {
-    console.error('AI response error:', error);
     throw error;
   }
 };
@@ -157,12 +101,9 @@ export const saveJournalEntry = async (data) => {
       wordCount: data.wordCount || 0
     };
     
-    console.log('📤 Saving journal:', payload);
-    
     const response = await api.post('/journal', payload);
     return response.data;
   } catch (error) {
-    console.error('Save journal error:', error);
     throw error;
   }
 };
@@ -176,7 +117,6 @@ export const getJournalEntries = async () => {
     const response = await api.get(`/journal/${userId}`);
     return response.data;
   } catch (error) {
-    console.error('Get journal entries error:', error);
     throw error;
   }
 };
@@ -192,13 +132,12 @@ export const getUserSettings = async () => {
     const response = await api.get(`/user/${userId}/settings`);
     return response.data;
   } catch (error) {
-    console.error('Get user settings error:', error);
     throw error;
   }
 };
 
 /**
- * Обновява настройки
+ * Обновява настройки на потребителя
  */
 export const updateUserSettings = async (settings) => {
   try {
@@ -206,13 +145,12 @@ export const updateUserSettings = async (settings) => {
     const response = await api.put(`/user/${userId}/settings`, settings);
     return response.data;
   } catch (error) {
-    console.error('Update settings error:', error);
     throw error;
   }
 };
 
 /**
- * Експортира всички данни
+ * Експортира потребителски данни
  */
 export const exportUserData = async () => {
   try {
@@ -232,7 +170,6 @@ export const exportUserData = async () => {
     
     return { success: true };
   } catch (error) {
-    console.error('Export error:', error);
     throw error;
   }
 };
@@ -248,7 +185,6 @@ export const deleteUserData = async (confirmation) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Delete user error:', error);
     throw error;
   }
 };
@@ -262,7 +198,6 @@ export const createBackup = async () => {
     const response = await api.post(`/user/${userId}/backup`);
     return response.data;
   } catch (error) {
-    console.error('Create backup error:', error);
     throw error;
   }
 };
@@ -275,7 +210,6 @@ export const restoreFromBackup = async (backupKey) => {
     const response = await api.post('/user/restore', { backupKey });
     return response.data;
   } catch (error) {
-    console.error('Restore error:', error);
     throw error;
   }
 };

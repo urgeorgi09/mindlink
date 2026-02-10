@@ -1,5 +1,5 @@
 // controllers/emotionController.js
-import MoodEntry from '../models/Emotion.js';
+import Emotion from '../models/Emotion.js';
 import User from '../models/User.js';
 import { encrypt, decrypt } from '../utils/crypto.js';
 
@@ -19,7 +19,7 @@ export const getEmotions = async (req, res) => {
 
     console.log('📥 Fetching emotions for user:', userId);
 
-    const emotions = await MoodEntry
+    const emotions = await Emotion
       .find({ userId })
       .sort({ timestamp: -1 })
       .limit(100)
@@ -82,7 +82,7 @@ export const createEmotion = async (req, res) => {
 
     const noteEnc = note ? encrypt(note) : null;
 
-    const emotion = await MoodEntry.create({
+    const emotion = await Emotion.create({
       userId,
       mood: Number(mood),
       energy: Number(energy),

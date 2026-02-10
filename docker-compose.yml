@@ -1,0 +1,37 @@
+services:
+  # База данни
+  mindlink-db:
+    image: postgres:15
+    container_name: mindlink-db
+    environment:
+      POSTGRES_USER: mindlink_user
+      POSTGRES_PASSWORD: mindlink_pass
+      POSTGRES_DB: mindlink
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Бекенд
+  backend:
+    build: ./backend
+    container_name: mindlink-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://mindlink_user:mindlink_pass@mindlink-db:5432/mindlink
+      - PORT=5000
+    depends_on:
+      - mindlink-db
+
+  # Фронтенд
+  frontend:
+    build: ./frontend
+    container_name: mindlink-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

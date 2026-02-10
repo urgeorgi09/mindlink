@@ -2,6 +2,8 @@ import User from '../models/User.js';
 import MoodEntry from '../models/MoodEntry.js';
 import ChatMessage from '../models/ChatMessage.js';
 import JournalEntry from '../models/JournalEntry.js';
+import Journal from '../models/Journal.js';
+import Emotion from '../models/Emotion.js';
 import { decrypt, generateBackupKey, validateBackupKey } from '../utils/crypto.js';
 
 /**
@@ -15,14 +17,15 @@ export async function getUserSettings(req, res) {
     let user = await User.findById(userId);
     
     if (!user) {
-      // Създай нов user при първо извикване
-      user = await User.create({ _id: userId });
+      // Създай нов user при първо извикване с default role 'user'
+      user = await User.create({ _id: userId, role: 'user' });
     }
     
     res.json({
       success: true,
       settings: user.settings,
       stats: user.stats,
+      role: user.role,
       hasBackup: !!user.backupKey
     });
   } catch (err) {
@@ -121,11 +124,13 @@ export async function exportUserData(req, res) {
     const { userId } = req.params;
     
     // Събиране на данни
-    const [user, moods, chats, journals] = await Promise.all([
+    const [user, moods, chats, journals, journalEntries, emotions] = await Promise.all([
       User.findById(userId),
       MoodEntry.find({ userId }).lean(),
       ChatMessage.find({ userId }).lean(),
-      JournalEntry.find({ userId }).lean()
+      Journal.find({ userId }).lean(),
+      JournalEntry.find({ userId }).lean(),
+      Emotion.find({ userId }).lean()
     ]);
     
     if (!user) {
@@ -146,6 +151,11 @@ export async function exportUserData(req, res) {
     
     const decryptedJournals = journals.map(j => ({
       ...j,
+      content: j.contentEnc ? decrypt(j.contentEnc) : j.content
+    }));
+    
+    const decryptedJournalEntries = journalEntries.map(j => ({
+      ...j,
       text: decrypt(j.textEnc)
     }));
     
@@ -159,7 +169,9 @@ export async function exportUserData(req, res) {
       },
       moodEntries: decryptedMoods,
       chatMessages: decryptedChats,
-      journalEntries: decryptedJournals
+      journals: decryptedJournals,
+      journalEntries: decryptedJournalEntries,
+      emotions
     };
     
     // Запиши export request
@@ -237,7 +249,9 @@ export async function deleteUserData(req, res) {
       User.findByIdAndDelete(userId),
       MoodEntry.deleteMany({ userId }),
       ChatMessage.deleteMany({ userId }),
-      JournalEntry.deleteMany({ userId })
+      Journal.deleteMany({ userId }),
+      JournalEntry.deleteMany({ userId }),
+      Emotion.deleteMany({ userId })
     ]);
     
     res.json({
@@ -269,6 +283,75 @@ export async function updateActivity(req, res) {
   }
 }
 
+/**
+ * GET /api/user/:userId/profile
+ * Get user profile with role information
+ */
+export async function getUserProfile(req, res) {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-backupKey');
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      profile: {
+        id: user._id,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastActive: user.lastActive,
+        settings: user.settings,
+        stats: user.stats
+      }
+    });
+  } catch (err) {
+    console.error('Get profile error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * POST /api/user/create-account
+ * Create account with specific role (admin only)
+ */
+export async function createAccount(req, res) {
+  try {
+    const { userId, role = 'user' } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'User ID required' });
+    }
+    
+    if (!['user', 'therapist', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role' });
+    }
+    
+    // Check if user already exists
+    const existingUser = await User.findById(userId);
+    if (existingUser) {
+      return res.status(409).json({ success: false, error: 'User already exists' });
+    }
+    
+    const user = await User.create({ _id: userId, role });
+    
+    res.json({
+      success: true,
+      message: `Account created with role: ${role}`,
+      user: {
+        id: user._id,
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Create account error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 export default {
   getUserSettings,
   updateUserSettings,
@@ -277,5 +360,7 @@ export default {
   exportUserData,
   importUserData,
   deleteUserData,
-  updateActivity
+  updateActivity,
+  getUserProfile,
+  createAccount
 };

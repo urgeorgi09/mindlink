@@ -1,31 +1,31 @@
-import mongoose from 'mongoose';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../../config/database');
 
-const chatMessageSchema = new mongoose.Schema({
+const ChatMessage = sequelize.define('ChatMessage', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   userId: {
-    type: String,
-    required: true,
-    index: true
+    type: DataTypes.UUID,
+    allowNull: false
   },
-  role: {
-    type: String,
-    enum: ['user', 'assistant'],
-    required: true
+  recipientId: {
+    type: DataTypes.UUID,
+    allowNull: false
   },
-  contentEnc: {
-    type: String,
-    required: true
+  text: {
+    type: DataTypes.TEXT,
+    allowNull: false
   },
   timestamp: {
-    type: Date,
-    default: Date.now,
-    index: true
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: true
+  timestamps: false,
+  tableName: 'chat_messages'
 });
 
-chatMessageSchema.index({ userId: 1, timestamp: -1 });
-
-const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
-
-export default ChatMessage;
+module.exports = ChatMessage;

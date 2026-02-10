@@ -1,0 +1,84 @@
+/* Dark Mode Global Styles */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+}
+
+body.dark-mode {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  transition: all 0.3s ease;
+  min-height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+body.dark-mode #root {
+  background-color: #0f172a !important;
+  min-height: 100vh;
+  width: 100%;
+}
+
+body.dark-mode * {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+/* Dark mode for common elements */
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode for cards and containers */
+body.dark-mode [style*="background: white"],
+body.dark-mode [style*="background-color: white"] {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode [style*="background: #ffffff"] {
+  background: #1e293b !important;
+}
+
+/* Dark mode for borders */
+body.dark-mode [style*="border: 1px solid #e2e8f0"],
+body.dark-mode [style*="border-color: #e2e8f0"] {
+  border-color: #334155 !important;
+}
+
+/* Dark mode for text colors */
+body.dark-mode [style*="color: #2d3748"] {
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode [style*="color: #718096"] {
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode [style*="color: #4a5568"] {
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode for shadows */
+body.dark-mode [style*="box-shadow"] {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}

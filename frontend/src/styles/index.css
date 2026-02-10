@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
 
 * {
   margin: 0;
@@ -8,23 +8,23 @@
 
 :root {
   /* Успокояваща палитра */
-  --calm-blue: #7C9CBF;
-  --calm-lavender: #B8A9C9;
-  --calm-sage: #8FB8A0;
-  --calm-peach: #F4C2A4;
-  --calm-sky: #89CFF0;
-  
+  --calm-blue: #7c9cbf;
+  --calm-lavender: #b8a9c9;
+  --calm-sage: #8fb8a0;
+  --calm-peach: #f4c2a4;
+  --calm-sky: #89cff0;
+
   /* Фонови градиенти */
-  --bg-primary: linear-gradient(135deg, #E8F4F8 0%, #F5F0F8 50%, #F8F4E8 100%);
-  --bg-card: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,248,255,0.95) 100%);
-  
+  --bg-primary: linear-gradient(135deg, #e8f4f8 0%, #f5f0f8 50%, #f8f4e8 100%);
+  --bg-card: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 248, 255, 0.95) 100%);
+
   /* Сенки */
   --shadow-sm: 0 2px 8px rgba(124, 156, 191, 0.08);
   --shadow-md: 0 4px 16px rgba(124, 156, 191, 0.12);
   --shadow-lg: 0 8px 30px rgba(124, 156, 191, 0.18);
-  
+
   /* Текст */
-  --text-primary: #4A5568;
+  --text-primary: #4a5568;
   --text-secondary: #718096;
 }
 
@@ -33,7 +33,13 @@ html {
 }
 
 body {
-  font-family: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Nunito",
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-primary);
@@ -47,13 +53,13 @@ body {
 
 /* Анимирани фонови частици (опционално) */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
+  background:
     radial-gradient(circle at 20% 50%, rgba(124, 156, 191, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(184, 169, 201, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 40% 20%, rgba(143, 184, 160, 0.1) 0%, transparent 50%);
@@ -63,8 +69,15 @@ body::before {
 }
 
 @keyframes floatParticles {
-  0%, 100% { opacity: 0.3; transform: translateY(0); }
-  50% { opacity: 0.6; transform: translateY(-20px); }
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-20px);
+  }
 }
 
 /* Фокус стилове - меки градиенти */
@@ -97,13 +110,17 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5A7A99, #9580AB);
+  background: linear-gradient(135deg, #5a7a99, #9580ab);
   border-color: rgba(255, 255, 255, 0.7);
 }
 
 /* Smooth transitions за всички елементи */
 * {
-  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 /* Основни контейнери */
@@ -135,7 +152,7 @@ a:hover {
 }
 
 .gradient-warm {
-  background: linear-gradient(135deg, var(--calm-peach) 0%, #F9D9C5 100%);
+  background: linear-gradient(135deg, var(--calm-peach) 0%, #f9d9c5 100%);
 }
 
 .glass-effect {
@@ -158,7 +175,8 @@ a:hover {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -167,7 +185,8 @@ a:hover {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -192,7 +211,7 @@ a:hover {
   html {
     font-size: 14px;
   }
-  
+
   main {
     padding: 24px 16px;
   }
@@ -230,7 +249,7 @@ button {
 }
 
 .loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -244,5 +263,7 @@ button {
 }
 
 @keyframes spinner {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

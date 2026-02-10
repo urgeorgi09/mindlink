@@ -1,133 +1,316 @@
-// src/pages/Home.jsx - Fully Responsive
 import React from "react";
-import { Container, Box, Typography, Button, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useAnonymous } from "../context/AnonymousContext";
 
-export default function Home() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+const Home = () => {
+  const { userRole } = useAnonymous();
+  const isLoggedIn = localStorage.getItem("token");
 
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: { xs: 2, sm: 3, md: 5 },
-        background: 'linear-gradient(135deg, #a78bfa, #6366f1, #3b82f6)',
-        animation: 'gradientShift 15s ease infinite',
-        backgroundSize: '300% 300%',
-        '@keyframes gradientShift': {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' }
-        }
-      }}
-    >
-      <Container maxWidth="md">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+  if (!isLoggedIn) {
+    return (
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "40px 20px",
+          textAlign: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "3rem",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            marginBottom: "20px",
+          }}
         >
-          <Box
-            sx={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: { xs: 3, sm: 4, md: 5 },
-              p: { xs: 3, sm: 4, md: 6 },
-              backdropFilter: 'blur(15px)',
-              textAlign: 'center',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
-              color: 'white'
+          Добре дошли в MindLink+ 🧠
+        </h1>
+        <p
+          style={{
+            fontSize: "1.2rem",
+            color: "#666",
+            marginBottom: "40px",
+            maxWidth: "600px",
+            margin: "0 auto 40px auto",
+          }}
+        >
+          Вашата платформа за психично здраве с професионални инструменти.
+        </p>
+
+        <div
+          style={{ display: "flex", gap: "20px", justifyContent: "center", marginBottom: "60px" }}
+        >
+          <Link
+            to="/login"
+            style={{
+              background: "linear-gradient(135deg, #667eea, #764ba2)",
+              color: "white",
+              padding: "15px 30px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              fontWeight: "600",
             }}
           >
-            <Typography
-              variant="h1"
-              sx={{
-                fontWeight: 900,
-                mb: { xs: 1.5, md: 2 },
-                fontSize: { xs: '2rem', sm: '2.5rem', md: '3.2rem' }
+            🔑 Влизане
+          </Link>
+          <Link
+            to="/register"
+            style={{
+              background: "#22c55e",
+              color: "white",
+              padding: "15px 30px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              fontWeight: "600",
+            }}
+          >
+            📝 Регистрация
+          </Link>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "30px",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ fontSize: "3rem", marginBottom: "15px" }}>📊</div>
+            <h3>Mood Tracking</h3>
+            <p>Проследявайте настроението си ежедневно</p>
+          </div>
+
+          <div
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ fontSize: "3rem", marginBottom: "15px" }}>📖</div>
+            <h3>Digital Journal</h3>
+            <p>Водете цифров дневник за мислите си</p>
+          </div>
+
+          <div
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ fontSize: "3rem", marginBottom: "15px" }}>🩺</div>
+            <h3>Professional Care</h3>
+            <p>Свържете се с лицензирани терапевти</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show cards for logged in users
+  if (userRole === "user") {
+    return (
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "40px 20px",
+          textAlign: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "3rem",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            marginBottom: "20px",
+          }}
+        >
+          Добре дошли в MindLink+ 🧠
+        </h1>
+        <p
+          style={{
+            fontSize: "1.2rem",
+            color: "#666",
+            marginBottom: "60px",
+          }}
+        >
+          Изберете функция за да започнете
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "30px",
+          }}
+        >
+          <Link to="/mood" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                background: "white",
+                padding: "40px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                cursor: "pointer",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)";
               }}
             >
-              MindLink+
-            </Typography>
+              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>😊</div>
+              <h3 style={{ fontSize: "1.5rem", color: "#2d3748", marginBottom: "10px" }}>
+                Емоции
+              </h3>
+              <p style={{ color: "#718096", fontSize: "1rem" }}>
+                Проследете и анализирайте емоциите си
+              </p>
+            </div>
+          </Link>
 
-            <Typography
-              variant="body1"
-              sx={{
-                fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.2rem' },
-                lineHeight: { xs: 1.5, md: 1.6 },
-                mb: { xs: 3, sm: 4, md: 5 },
-                opacity: 0.9,
-                px: { xs: 0, sm: 2, md: 4 }
+          <Link to="/journal" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                background: "white",
+                padding: "40px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                cursor: "pointer",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)";
               }}
             >
-              Подобри твоето емоционално състояние със AI-навигирани инструменти,
-              всекидневен дневник, следене на емоциите и успокояващи упражнения.
-            </Typography>
+              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>📖</div>
+              <h3 style={{ fontSize: "1.5rem", color: "#2d3748", marginBottom: "10px" }}>
+                Дневник
+              </h3>
+              <p style={{ color: "#718096", fontSize: "1rem" }}>
+                Водете личен дневник за мислите и емоциите си
+              </p>
+            </div>
+          </Link>
 
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              justifyContent="center"
-              sx={{ width: '100%' }}
+          <Link to="/patient-chat" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                background: "white",
+                padding: "40px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                cursor: "pointer",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)";
+              }}
             >
-              <Button
-                component={Link}
-                to="/dashboard"
-                variant="contained"
-                size={isMobile ? 'medium' : 'large'}
-                fullWidth={isMobile}
-                sx={{
-                  background: '#ffffff',
-                  color: '#4f46e5',
-                  fontWeight: 700,
-                  px: { xs: 3, md: 4 },
-                  py: { xs: 1.5, md: 1.75 },
-                  fontSize: { xs: '0.95rem', md: '1.1rem' },
-                  borderRadius: 3,
-                  boxShadow: '0 5px 20px rgba(0,0,0,0.2)',
-                  '&:hover': {
-                    background: '#f3f4f6',
-                    transform: 'scale(1.05)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.25)'
-                  }
-                }}
-              >
-                🌟 Отиди при твоето тъбло
-              </Button>
+              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>💬</div>
+              <h3 style={{ fontSize: "1.5rem", color: "#2d3748", marginBottom: "10px" }}>
+                Чат с лекар
+              </h3>
+              <p style={{ color: "#718096", fontSize: "1rem" }}>
+                Свържете се с вашия терапевт за консултация
+              </p>
+            </div>
+          </Link>
 
-              <Button
-                component={Link}
-                to="/journal"
-                variant="outlined"
-                size={isMobile ? 'medium' : 'large'}
-                fullWidth={isMobile}
-                sx={{
-                  borderColor: 'white',
-                  color: 'white',
-                  fontWeight: 700,
-                  px: { xs: 3, md: 4 },
-                  py: { xs: 1.5, md: 1.75 },
-                  fontSize: { xs: '0.95rem', md: '1.1rem' },
-                  borderRadius: 3,
-                  borderWidth: 2,
-                  '&:hover': {
-                    borderWidth: 2,
-                    background: 'rgba(255,255,255,0.2)',
-                    transform: 'scale(1.05)'
-                  }
-                }}
-              >
-                📘 Отвори Дневника
-              </Button>
-            </Stack>
-          </Box>
-        </motion.div>
-      </Container>
-    </Box>
+          <Link to="/therapists" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                background: "white",
+                padding: "40px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                cursor: "pointer",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-5px)";
+                e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.1)";
+              }}
+            >
+              <div style={{ fontSize: "4rem", marginBottom: "20px" }}>🩺</div>
+              <h3 style={{ fontSize: "1.5rem", color: "#2d3748", marginBottom: "10px" }}>
+                Терапевти
+              </h3>
+              <p style={{ color: "#718096", fontSize: "1rem" }}>
+                Намерете и свържете се с лицензирани терапевти
+              </p>
+            </div>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // For admin/therapist - simple welcome
+  return (
+    <div
+      style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "40px 20px",
+        textAlign: "center",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "3rem",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          marginBottom: "20px",
+        }}
+      >
+        Добре дошли в MindLink+ 🧠
+      </h1>
+      <p
+        style={{
+          fontSize: "1.2rem",
+          color: "#666",
+          marginBottom: "40px",
+        }}
+      >
+        Използвайте навигацията за достъп до функциите на платформата.
+      </p>
+    </div>
   );
-}
+};
+
+export default Home;
