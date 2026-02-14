@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["node", "src/server-postgres.js"]
+CMD ["node", "server-postgres.js"]
