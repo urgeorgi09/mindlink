@@ -27,12 +27,12 @@ services:
     depends_on:
       - mindlink-db
 
-  # Фронтенд - Основен (port 5173)
+  # Фронтенд - Основен (port 80)
   frontend:
     build: ./frontend
     container_name: mindlink-frontend
     ports:
-      - "0.0.0.0:5173:80"
+      - "80:5173"
     depends_on:
       - backend
 
