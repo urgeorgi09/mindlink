@@ -90,46 +90,8 @@ export const useBatchStatus = (userIds) => {
   return statuses;
 };
 
-// Hook за изпращане на собствен heartbeat
+// Hook за изпращане на собствен heartbeat (DISABLED)
 export const usePresence = () => {
-  useEffect(() => {
-    const sendHeartbeat = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        await fetch('/api/presence/heartbeat', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (error) {
-        // Silent fail - не е критично ако heartbeat не мине
-      }
-    };
-
-    // Изпращаме heartbeat веднага
-    sendHeartbeat();
-    
-    // После на всеки 20 секунди
-    const interval = setInterval(sendHeartbeat, 20000);
-    
-    // Cleanup при logout или затваряне на страницата
-    const handleUnload = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        // Използваме sendBeacon за да работи при затваряне на таб
-        navigator.sendBeacon(
-          '/api/presence/offline',
-          new Blob([JSON.stringify({})], { type: 'application/json' })
-        );
-      } catch {}
-    };
-
-    window.addEventListener('beforeunload', handleUnload);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('beforeunload', handleUnload);
-      // Маркираме като offline при unmount
-      handleUnload();
-    };
-  }, []);
+  // Temporarily disabled - presence system not implemented in backend
+  return;
 };
