@@ -1,55 +1,45 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
+import sequelize from '../config/database.js';
 import User from '../src/models/User.js';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mindlink';
-
-const seedUsers = [
+// Използваме фиксирани ID-та за тест акаунтите, за да не се дублират при всеки сийд
+const SEED_USERS = [
   {
-    _id: 'admin-' + uuidv4(),
-    role: 'admin'
+    id: '00000000-0000-4000-a000-000000000001', // Фиксиран UUID
+    email: 'admin@mindlink.bg',
+    role: 'admin',
+    username: 'system_admin'
   },
   {
-    _id: 'therapist-' + uuidv4(),
-    role: 'therapist'
-  },
-  {
-    _id: 'user-' + uuidv4(),
-    role: 'user'
+    id: '00000000-0000-4000-a000-000000000002',
+    email: 'therapist@mindlink.bg',
+    role: 'therapist',
+    username: 'main_therapist'
   }
 ];
 
-const seed = async () => {
+const seedUsers = async () => {
+  const transaction = await sequelize.transaction();
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('🚀 Seeding system users...');
 
-    for (const userData of seedUsers) {
-      const existingUser = await User.findById(userData._id);
-      if (!existingUser) {
-        await User.create(userData);
-        console.log(`✅ Created ${userData.role}: ${userData._id}`);
-      } else {
-        console.log(`⚠️  User already exists: ${userData._id}`);
-      }
-    }
-
-    console.log('\n🎉 Seed completed successfully!');
-    console.log('\nTest accounts created:');
-    seedUsers.forEach(user => {
-      console.log(`${user.role.toUpperCase()}: ${user._id}`);
+    // Enterprise подход: upsert (update or insert) по имейл или фиксирано ID
+    await User.bulkCreate(SEED_USERS, {
+      updateOnDuplicate: ['role', 'username'], 
+      transaction
     });
-    
-    console.log('\nYou can use these IDs in the frontend RoleSelector component for testing.');
-    
-    process.exit(0);
+
+    await transaction.commit();
+    console.log('✅ Users synced successfully.');
   } catch (err) {
-    console.error('❌ Seed failed:', err);
-    process.exit(1);
+    await transaction.rollback();
+    console.error('❌ Seeding failed:', err.message);
+  } finally {
+    await sequelize.close();
   }
 };
 
-seed();
+seedUsers();

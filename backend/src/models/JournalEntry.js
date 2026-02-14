@@ -10,36 +10,44 @@ const JournalEntry = sequelize.define('JournalEntry', {
   userId: {
     type: DataTypes.UUID,
     allowNull: false,
+    index: true, // Критично за бързина при филтриране по потребител
     references: {
       model: 'Users',
       key: 'id'
     }
   },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  content: {
+  // Enterprise стандарт: Криптирани полета
+  titleEnc: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: false,
+    comment: 'Encrypted title'
+  },
+  contentEnc: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    comment: 'Encrypted content'
   },
   category: {
     type: DataTypes.ENUM('personal', 'gratitude', 'goals', 'reflection'),
     defaultValue: 'personal'
   },
   mood: {
-    type: DataTypes.INTEGER,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    type: DataTypes.SMALLINT, // Пести място в БД спрямо INTEGER
+    validate: { min: 1, max: 5 }
   },
   tags: {
     type: DataTypes.ARRAY(DataTypes.STRING),
     defaultValue: []
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'journal_entries',
+  indexes: [
+    // Композитен индекс за бързо сортиране по дата в рамките на един профил
+    {
+      fields: ['userId', 'createdAt']
+    }
+  ]
 });
 
 module.exports = JournalEntry;

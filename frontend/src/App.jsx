@@ -1,12 +1,29 @@
-// App.js - добавен useHeartbeat за текущия потребител
+// App.js - подобрена навигация и хамбургер меню
 
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import "./styles/App.css";
 import "./styles/darkmode.css";
+import "./styles/global-text-align.css";
+import "./styles/mobile-responsive.css";
+import { 
+  HomeIcon, 
+  KeyIcon, 
+  PencilSquareIcon, 
+  BookOpenIcon, 
+  ChatBubbleLeftRightIcon, 
+  UserGroupIcon,
+  SunIcon,
+  MoonIcon,
+  ArrowRightOnRectangleIcon,
+  DevicePhoneMobileIcon,
+  HeartIcon,
+  UserIcon
+} from './components/Icons';
 
 import { AnonymousProvider, useAnonymous } from "./context/AnonymousContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
 import { usePresence } from "./hooks/usePresence";
 import './styles/presence.css';
 
@@ -23,39 +40,66 @@ import TherapistsPage from "./pages/TherapistsPage";
 import TherapistNotes from "./pages/TherapistNotes";
 import TherapistDashboard from "./pages/TherapistDashboard";
 import TherapistVerification from "./pages/TherapistVerification";
-import AdminDashboard from "./pages/AdminDashboard";
-import SystemAnalytics from "./pages/SystemAnalytics";
 import Users from "./pages/Users";
 import Therapist from "./pages/Therapist";
 import MoodTrackerPage from "./pages/MoodTracker";
 import { EmotionsPage } from "./components/PlaceholderComponents";
 
-function NavLink({ to, children, emoji }) {
+function NavLink({ to, children, emoji, onClick, IconComponent }) {
   const location = useLocation();
   const isActive = location.pathname === to;
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <Link
       to={to}
+      onClick={onClick}
       style={{
         color: "white",
         textDecoration: "none",
-        padding: "8px 12px",
-        borderRadius: "12px",
-        fontSize: "clamp(14px, 3vw, 16px)",
+        padding: isMobile ? "12px 16px" : "8px 14px",
+        borderRadius: isMobile ? "10px" : "8px",
+        fontSize: isMobile ? "15px" : "13.5px",
         fontWeight: 600,
-        background: isActive ? "rgba(255, 255, 255, 0.2)" : "transparent",
-        transition: "all 0.3s ease",
+        background: isActive 
+          ? "rgba(255, 255, 255, 0.25)" 
+          : "rgba(255, 255, 255, 0.08)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         display: "flex",
         alignItems: "center",
-        gap: "4px",
-        backdropFilter: isActive ? "blur(10px)" : "none",
-        border: isActive ? "1px solid rgba(255, 255, 255, 0.3)" : "1px solid transparent",
+        gap: isMobile ? "12px" : "8px",
+        border: isActive 
+          ? "1px solid rgba(255, 255, 255, 0.35)" 
+          : "1px solid rgba(255, 255, 255, 0.12)",
         whiteSpace: "nowrap",
+        width: isMobile ? "100%" : "auto",
+        boxShadow: isActive 
+          ? "0 2px 10px rgba(0, 0, 0, 0.15)" 
+          : "none",
+      }}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.18)";
+          e.currentTarget.style.transform = "translateY(-1px)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = isActive ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.08)";
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = isActive ? "0 2px 10px rgba(0, 0, 0, 0.15)" : "none";
+        }
       }}
     >
-      {emoji && <span style={{ fontSize: "clamp(16px, 3vw, 18px)" }}>{emoji}</span>}
-      {children}
+      {IconComponent && <IconComponent style={{ width: isMobile ? "20px" : "18px", height: isMobile ? "20px" : "18px", strokeWidth: 2.5 }} />}
+      <span>{children}</span>
     </Link>
   );
 }
@@ -69,41 +113,329 @@ function ScrollToTop() {
 }
 
 function DarkModeButton({ darkMode, toggleDarkMode }) {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+  
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const Icon = darkMode ? SunIcon : MoonIcon;
+
   return (
     <button
       onClick={toggleDarkMode}
       style={{
         color: "white",
-        background: "rgba(255, 255, 255, 0.1)",
+        background: "rgba(255, 255, 255, 0.12)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
-        padding: "6px 12px",
-        borderRadius: "8px",
-        fontSize: "14px",
+        padding: isMobile ? "12px 16px" : "8px 14px",
+        borderRadius: isMobile ? "10px" : "8px",
+        fontSize: isMobile ? "15px" : "13px",
+        fontWeight: 600,
         cursor: "pointer",
-        marginRight: "8px",
+        width: isMobile ? "100%" : "auto",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: isMobile ? "12px" : "8px",
+      }}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+          e.currentTarget.style.transform = "translateY(0)";
+        }
       }}
     >
-      {darkMode ? "☀️" : "🌙"}
+      <Icon style={{ width: isMobile ? "20px" : "18px", height: isMobile ? "20px" : "18px", strokeWidth: 2.5 }} />
+      {isMobile && <span>{darkMode ? "Светъл режим" : "Тъмен режим"}</span>}
     </button>
   );
 }
 
 function LogoutButton({ onLogout }) {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+  
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <button
       onClick={onLogout}
       style={{
         color: "white",
-        background: "rgba(239, 68, 68, 0.2)",
-        border: "1px solid rgba(239, 68, 68, 0.3)",
-        padding: "6px 12px",
-        borderRadius: "8px",
-        fontSize: "14px",
+        background: "rgba(239, 68, 68, 0.25)",
+        border: "1px solid rgba(239, 68, 68, 0.35)",
+        padding: isMobile ? "12px 16px" : "8px 14px",
+        borderRadius: isMobile ? "10px" : "8px",
+        fontSize: isMobile ? "15px" : "13px",
+        fontWeight: 600,
         cursor: "pointer",
+        width: isMobile ? "100%" : "auto",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: isMobile ? "12px" : "8px",
+      }}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = "rgba(239, 68, 68, 0.35)";
+          e.currentTarget.style.transform = "translateY(-1px)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+          e.currentTarget.style.transform = "translateY(0)";
+        }
       }}
     >
-      🚪 Изход
+      <ArrowRightOnRectangleIcon style={{ width: isMobile ? "20px" : "18px", height: isMobile ? "20px" : "18px", strokeWidth: 2.5 }} />
+      <span>Изход</span>
     </button>
+  );
+}
+
+function HamburgerButton({ isOpen, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Menu"
+      style={{
+        background: isOpen ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.12)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        color: "white",
+        cursor: "pointer",
+        padding: "6px",
+        borderRadius: "8px",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "38px",
+        height: "38px",
+        gap: "4px",
+        zIndex: 1001,
+        position: 'relative',
+        boxShadow: isOpen ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "none",
+      }}
+    >
+      <span
+        style={{
+          width: "22px",
+          height: "2.5px",
+          background: "white",
+          borderRadius: "2px",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: isOpen ? "rotate(45deg) translateY(7px)" : "rotate(0)",
+        }}
+      />
+      <span
+        style={{
+          width: "22px",
+          height: "2.5px",
+          background: "white",
+          borderRadius: "2px",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          opacity: isOpen ? 0 : 1,
+          transform: isOpen ? "translateX(10px)" : "translateX(0)",
+        }}
+      />
+      <span
+        style={{
+          width: "22px",
+          height: "2.5px",
+          background: "white",
+          borderRadius: "2px",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          transform: isOpen ? "rotate(-45deg) translateY(-7px)" : "rotate(0)",
+        }}
+      />
+    </button>
+  );
+}
+
+function MobileMenu({ menuOpen, setMenuOpen }) {
+  const { userRole, logout } = useAnonymous();
+  const { darkMode, toggleDarkMode } = useTheme();
+  const isLoggedIn = localStorage.getItem("token");
+
+  // Блокиране на скролването когато менюто е отворено
+  React.useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [menuOpen]);
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    window.location.href = "/";
+  };
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const getRoleNavigation = () => {
+    if (!isLoggedIn) {
+      return (
+        <>
+          <NavLink to="/login" IconComponent={KeyIcon} onClick={closeMenu}>Влизане</NavLink>
+          <NavLink to="/register" IconComponent={PencilSquareIcon} onClick={closeMenu}>Регистрация</NavLink>
+        </>
+      );
+    }
+
+    if (userRole === "therapist") {
+      return (
+        <>
+          <NavLink to="/therapist-chat" IconComponent={ChatBubbleLeftRightIcon} onClick={closeMenu}>Пациенти</NavLink>
+          <NavLink to="/therapist-notes" IconComponent={PencilSquareIcon} onClick={closeMenu}>Бележки</NavLink>
+          <NavLink to="/therapist-dashboard" IconComponent={UserGroupIcon} onClick={closeMenu}>Акаунт</NavLink>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <NavLink to="/journal" IconComponent={BookOpenIcon} onClick={closeMenu}>Дневник</NavLink>
+        <NavLink to="/patient-chat" IconComponent={ChatBubbleLeftRightIcon} onClick={closeMenu}>Чат</NavLink>
+        <NavLink to="/therapists" IconComponent={UserGroupIcon} onClick={closeMenu}>Терапевти</NavLink>
+      </>
+    );
+  };
+
+  return (
+    <>
+      {menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            zIndex: 1001,
+            animation: 'fadeIn 0.3s ease',
+            backdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+      
+      <div
+        style={{
+          display: menuOpen ? "flex" : "none",
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "min(300px, 80vw)",
+          background: darkMode 
+            ? "linear-gradient(180deg, rgba(15, 20, 35, 0.98) 0%, rgba(10, 15, 25, 0.98) 100%)" 
+            : "linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)",
+          padding: "16px 12px",
+          flexDirection: "column",
+          gap: "6px",
+          overflowY: "auto",
+          boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(20px)",
+          zIndex: 1002,
+          animation: "slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          borderLeft: `1px solid ${darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.12)"}`,
+        }}
+      >
+        {/* Хедър на менюто */}
+        <div style={{ 
+          marginBottom: "12px", 
+          paddingBottom: "12px", 
+          borderBottom: "1px solid rgba(255,255,255,0.1)" 
+        }}>
+          <h3 style={{ 
+            margin: 0, 
+            color: "white", 
+            fontSize: "16px", 
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}>
+            <DevicePhoneMobileIcon style={{ width: "18px", height: "18px", strokeWidth: 2.5 }} />
+            <span>Меню</span>
+          </h3>
+        </div>
+
+        {/* Навигационни линкове */}
+        <NavLink to="/" IconComponent={HomeIcon} onClick={closeMenu}>Начало</NavLink>
+        {getRoleNavigation()}
+        
+        {isLoggedIn && (
+          <>
+            <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "8px 0" }} />
+            
+            {/* Бутони за действия */}
+            <div style={{ display: "flex", gap: "6px", flexDirection: "column" }}>
+              <DarkModeButton darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+              <LogoutButton onLogout={handleLogout} />
+            </div>
+          </>
+        )}
+
+        {/* Footer на менюто */}
+        <div style={{ 
+          marginTop: "auto", 
+          paddingTop: "12px", 
+          borderTop: "1px solid rgba(255,255,255,0.1)" 
+        }}>
+          <p style={{ 
+            margin: 0, 
+            fontSize: "10px", 
+            color: "rgba(255,255,255,0.5)", 
+            textAlign: "center" 
+          }}>
+            MindLink+ © 2025
+          </p>
+        </div>
+      </div>
+
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          @keyframes slideInRight {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+        `}
+      </style>
+    </>
   );
 }
 
@@ -121,18 +453,8 @@ function Navigation() {
     if (!isLoggedIn) {
       return (
         <>
-          <NavLink to="/login" emoji="🔑">Влизане</NavLink>
-          <NavLink to="/register" emoji="📝">Регистрация</NavLink>
-        </>
-      );
-    }
-
-    if (userRole === "admin") {
-      return (
-        <>
-          <NavLink to="/admin-dashboard" emoji="⚙️">Админ Панел</NavLink>
-          <NavLink to="/therapist-dashboard" emoji="🩺">Терапевти</NavLink>
-          <NavLink to="/dashboard" emoji="📊">Табло</NavLink>
+          <NavLink to="/login" IconComponent={KeyIcon}>Влизане</NavLink>
+          <NavLink to="/register" IconComponent={PencilSquareIcon}>Регистрация</NavLink>
         </>
       );
     }
@@ -140,58 +462,32 @@ function Navigation() {
     if (userRole === "therapist") {
       return (
         <>
-          <NavLink to="/therapist-chat" emoji="💬">Пациенти</NavLink>
-          <NavLink to="/therapist-notes" emoji="📝">Бележки</NavLink>
-          <NavLink to="/account" emoji="👤">Моят акаунт</NavLink>
+          <NavLink to="/therapist-chat" IconComponent={ChatBubbleLeftRightIcon}>Пациенти</NavLink>
+          <NavLink to="/therapist-notes" IconComponent={PencilSquareIcon}>Бележки</NavLink>
+          <NavLink to="/therapist-dashboard" IconComponent={UserGroupIcon}>Акаунт</NavLink>
         </>
       );
     }
 
     return (
       <>
-        <NavLink to="/dashboard" emoji="📊">Табло</NavLink>
-        <NavLink to="/journal" emoji="📖">Дневник</NavLink>
-        <NavLink to="/patient-chat" emoji="💬">Чат с лекар</NavLink>
-        <NavLink to="/therapists" emoji="🩺">Терапевти</NavLink>
+        <NavLink to="/journal" IconComponent={BookOpenIcon}>Дневник</NavLink>
+        <NavLink to="/patient-chat" IconComponent={ChatBubbleLeftRightIcon}>Чат</NavLink>
+        <NavLink to="/therapists" IconComponent={UserGroupIcon}>Терапевти</NavLink>
       </>
     );
   };
 
   return (
-    <div
-      className="nav-links responsive-nav-links"
-      style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}
-    >
-      <NavLink to="/" emoji="🏠">Начало</NavLink>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' ,
+  flexWrap: 'wrap',  // ДОБАВЕТЕ ТОВА
+  maxWidth: '100%'}}>
+      <NavLink to="/" IconComponent={HomeIcon}>Начало</NavLink>
       {getRoleNavigation()}
-
       {isLoggedIn && (
         <>
           <DarkModeButton darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           <LogoutButton onLogout={handleLogout} />
-          <div
-            style={{
-              padding: "4px 8px",
-              borderRadius: "8px",
-              fontSize: "12px",
-              fontWeight: 600,
-              background:
-                userRole === "admin"
-                  ? "rgba(239, 68, 68, 0.2)"
-                  : userRole === "therapist"
-                    ? "rgba(147, 51, 234, 0.2)"
-                    : "rgba(59, 130, 246, 0.2)",
-              border: `1px solid ${
-                userRole === "admin"
-                  ? "rgba(239, 68, 68, 0.3)"
-                  : userRole === "therapist"
-                    ? "rgba(147, 51, 234, 0.3)"
-                    : "rgba(59, 130, 246, 0.3)"
-              }`,
-            }}
-          >
-            {userRole === "admin" ? "⚙️ Админ" : userRole === "therapist" ? "🩺 Терапевт" : "👤 Потребител"}
-          </div>
         </>
       )}
     </div>
@@ -208,21 +504,33 @@ function AppContent() {
     const isLoggedIn = localStorage.getItem("token");
     if (!isLoggedIn) return "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%)";
     switch (userRole) {
-      case "admin": return "linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)";
       case "therapist": return "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%)";
-      default: return "linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%)";
+      default: return "linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)";
     }
   };
 
   const getRoleLogo = () => {
     const isLoggedIn = localStorage.getItem("token");
-    if (!isLoggedIn) return { emoji: "🧠", title: "MindLink+" };
+    if (!isLoggedIn) return { icon: HomeIcon, title: "MindLink+" };
     switch (userRole) {
-      case "admin": return { emoji: "⚙️", title: "MindLink+ Admin" };
-      case "therapist": return { emoji: "🩺", title: "MindLink+ Pro" };
-      default: return { emoji: "🌱", title: "MindLink+ Care" };
+      case "therapist": return { icon: UserGroupIcon, title: "MindLink+ Pro" };
+      default: return { icon: HeartIcon, title: "MindLink+ Care" };
     }
   };
+
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", backgroundColor: colors.background, color: colors.text }}>
@@ -232,31 +540,67 @@ function AppContent() {
           className="responsive-nav"
           style={{
             background: getRoleGradient(),
-            padding: "18px 20px",
+            padding: isMobile ? "6px 12px" : "12px 24px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             color: "white",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
             position: "sticky",
             top: 0,
             zIndex: 1000,
-            flexWrap: "wrap",
-            gap: "10px",
+            minHeight: isMobile ? "48px" : "64px",
+            backdropFilter: "blur(10px)",
           }}
         >
-          <Link to="/" style={{ textDecoration: "none", color: "white" }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(20px, 4vw, 26px)", fontWeight: 800, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "clamp(22px, 4vw, 28px)" }}>{getRoleLogo().emoji}</span>
-              {getRoleLogo().title}
-            </h2>
-          </Link>
-          <Navigation />
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: isMobile ? "12px" : "0",
+            flex: isMobile ? "1" : "auto"
+          }}>
+            <Link to="/" style={{ textDecoration: "none", color: "white" }}>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: isMobile ? "15px" : "22px", 
+                fontWeight: 700, 
+                letterSpacing: "0.3px", 
+                display: "flex", 
+                alignItems: "center", 
+                gap: isMobile ? "6px" : "8px" 
+              }}>
+                {React.createElement(getRoleLogo().icon, { 
+                  style: { width: isMobile ? "20px" : "28px", height: isMobile ? "20px" : "28px", strokeWidth: 2 } 
+                })}
+                {getRoleLogo().title}
+              </h2>
+            </Link>
+            {isMobile && (
+              <HamburgerButton isOpen={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
+            )}
+          </div>
+          {!isMobile && (
+            <div>
+              <Navigation />
+            </div>
+          )}
         </nav>
+
+        {isMobile && (
+          <MobileMenu 
+            menuOpen={mobileMenuOpen} 
+            setMenuOpen={setMobileMenuOpen} 
+          />
+        )}
 
         <main
           className="page-transition"
-          style={{ minHeight: "80vh", padding: "20px", backgroundColor: colors.background, color: colors.text, transition: "all 0.3s ease" }}
+          style={{ 
+            minHeight: window.innerWidth < 768 ? "0" : "80vh", 
+            padding: window.innerWidth < 768 ? "10px" : "20px", 
+            backgroundColor: colors.background, 
+            color: colors.text
+          }}
         >
           <Routes>
             <Route path="/" element={<Home />} />
@@ -273,11 +617,8 @@ function AppContent() {
             <Route path="/patient-emotions/:patientId" element={<PatientEmotions />} />
             <Route path="/patient-chat" element={<PatientChatHub />} />
             <Route path="/patient-chat/:therapistId" element={<PatientChat />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/therapist-dashboard" element={<TherapistDashboard />} />
             <Route path="/therapist-verification" element={<TherapistVerification />} />
-            <Route path="/system-analytics" element={<SystemAnalytics />} />
-            <Route path="/analytics" element={<SystemAnalytics />} />
             <Route path="/users" element={<Users />} />
             <Route path="/therapist" element={<Therapist />} />
           </Routes>
@@ -285,20 +626,17 @@ function AppContent() {
 
         <footer
           style={{
-            background: darkMode
-              ? "linear-gradient(135deg, #0f172a 0%, #020617 100%)"
-              : "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-            padding: "30px 20px",
+            background: "linear-gradient(135deg, #569b5c 0%, #4a8751 100%)",
+            padding: window.innerWidth < 768 ? "15px 10px" : "30px 20px",
             textAlign: "center",
             color: "white",
             boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
-            transition: "all 0.3s ease",
           }}
         >
-          <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 500, opacity: 0.9 }}>
+          <p style={{ margin: "0 0 4px 0", fontSize: window.innerWidth < 768 ? "13px" : "16px", fontWeight: 500, opacity: 0.9 }}>
             © 2025 MindLink+ — Твоят спътник в света на психиката
           </p>
-          <p style={{ margin: 0, fontSize: "14px", opacity: 0.6 }}>Всички права запазени.</p>
+          <p style={{ margin: 0, fontSize: window.innerWidth < 768 ? "11px" : "14px", opacity: 0.6 }}>Всички права запазени.</p>
         </footer>
       </Router>
     </div>
@@ -309,7 +647,9 @@ export default function App() {
   return (
     <AnonymousProvider>
       <ThemeProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </ThemeProvider>
     </AnonymousProvider>
   );

@@ -1,166 +1,96 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { v4 as uuidv4 } from 'uuid';
+import User from '../models/User.js'; // Твоят Sequelize модел
 
-/**
- * POST /api/auth/register
- * Register new user with role selection
- */
+// Helper за токени (Enterprise практика: DRY)
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+  );
+};
+
 export const register = async (req, res) => {
   try {
-    const { email, password, role = 'user' } = req.body;
+    const { email, password } = req.body; // Не взимаме ролята от тялото!
 
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Email and password required' 
-      });
+      return res.status(400).json({ success: false, error: 'Email and password required' });
     }
 
-    if (!['user', 'therapist', 'admin'].includes(role)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Invalid role. Must be user, therapist, or admin' 
-      });
-    }
+    // Enterprise Сигурност: Регистрацията винаги е само за обикновени потребители
+    const role = 'user';
 
-    // Check if user exists
-    const existingUser = await User.findOne({ 'auth.email': email });
+    // Проверка за съществуващ потребител (Sequelize синтаксис)
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({ 
-        success: false, 
-        error: 'User already exists' 
-      });
+      return res.status(409).json({ success: false, error: 'User already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    const userId = Date.now().toString(); // Simple ID generation
     const user = await User.create({
-      _id: userId,
-      role,
-      auth: {
-        email,
-        password: hashedPassword,
-        verified: false
-      }
+      id: uuidv4(), // Сигурно и уникално ID
+      email,
+      password: hashedPassword,
+      role
     });
 
-    // Generate token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
       token,
-      user: {
-        id: user._id,
-        email: user.auth.email,
-        role: user.role,
-        createdAt: user.createdAt
-      }
+      user: { id: user.id, email: user.email, role: user.role }
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
 
-/**
- * POST /api/auth/login
- * Login user
- */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Email and password required' 
-      });
-    }
-
-    // Find user
-    const user = await User.findOne({ 'auth.email': email }).select('+auth.password');
-    if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid credentials' 
-      });
-    }
-
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.auth.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid credentials' 
-      });
+    const user = await User.findOne({ where: { email } });
+    
+    // Constant-time check (bcrypt) предпазва от timing attacks
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     // Update last active
-    user.lastActive = new Date();
-    await user.save();
+    await user.update({ lastActive: new Date() });
 
-    // Generate token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     res.json({
       success: true,
-      message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        email: user.auth.email,
-        role: user.role,
-        lastActive: user.lastActive
-      }
+      user: { id: user.id, email: user.email, role: user.role }
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
 
-/**
- * GET /api/auth/me
- * Get current user info
- */
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-auth.password');
+    // req.user идва от вашия Auth Middleware
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] } // Никога не връщай хеша!
+    });
+
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    res.json({
-      success: true,
-      user: {
-        id: user._id,
-        email: user.auth?.email,
-        role: user.role,
-        settings: user.settings,
-        stats: user.stats,
-        createdAt: user.createdAt,
-        lastActive: user.lastActive
-      }
-    });
+    res.json({ success: true, user });
   } catch (error) {
-    console.error('Get me error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };

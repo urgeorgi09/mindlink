@@ -15,33 +15,27 @@ const MoodEntry = sequelize.define('MoodEntry', {
       key: 'id'
     }
   },
+  // SMALLINT е по-ефективен за стойности 1-5
   mood: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.SMALLINT,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    validate: { min: 1, max: 5 }
   },
   energy: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.SMALLINT,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    validate: { min: 1, max: 5 }
   },
   anxiety: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.SMALLINT,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    validate: { min: 1, max: 5 }
   },
-  notes: {
+  // Криптирана бележка за максимална сигурност
+  notesEnc: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    comment: 'AES-256-GCM encrypted notes'
   },
   date: {
     type: DataTypes.DATEONLY,
@@ -49,7 +43,15 @@ const MoodEntry = sequelize.define('MoodEntry', {
     defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'mood_entries',
+  indexes: [
+    {
+      // Индекс за бързи справки и генериране на графики
+      name: 'idx_user_mood_history',
+      fields: ['userId', 'date']
+    }
+  ]
 });
 
 module.exports = MoodEntry;

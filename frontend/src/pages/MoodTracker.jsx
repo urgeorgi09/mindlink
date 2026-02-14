@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ChartBarIcon, BoltIcon, ExclamationCircleIcon, CheckCircleIcon, FaceSmileIcon, FaceFrownIcon } from '../components/Icons';
 
 const MoodTracker = () => {
   const [mood, setMood] = useState(5);
@@ -51,18 +52,16 @@ const MoodTracker = () => {
     }
   };
 
-  const getMoodEmoji = (value) => {
-    if (value <= 2) return "😢";
-    if (value <= 4) return "😕";
-    if (value <= 6) return "😐";
-    if (value <= 8) return "🙂";
-    return "😊";
+  const getMoodIcon = (value) => {
+    if (value <= 5) return FaceFrownIcon;
+    return FaceSmileIcon;
   };
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ textAlign: "center", color: "#2d3748", marginBottom: "30px" }}>
-        📊 Проследяване на настроението
+      <h1 style={{ textAlign: "center", color: "#2d3748", marginBottom: "30px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+        <ChartBarIcon style={{ width: "32px", height: "32px", strokeWidth: 2 }} />
+        Проследяване на настроението
       </h1>
 
       <div
@@ -76,8 +75,10 @@ const MoodTracker = () => {
       >
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "25px" }}>
-            <label style={{ display: "block", marginBottom: "10px", fontWeight: "600" }}>
-              Настроение: {getMoodEmoji(mood)} ({mood}/10)
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", fontWeight: "600" }}>
+              Настроение:
+              {React.createElement(getMoodIcon(mood), { style: { width: "20px", height: "20px", strokeWidth: 2, color: mood <= 5 ? "#ef4444" : "#22c55e" } })}
+              ({mood}/10)
             </label>
             <input
               type="range"
@@ -90,8 +91,10 @@ const MoodTracker = () => {
           </div>
 
           <div style={{ marginBottom: "25px" }}>
-            <label style={{ display: "block", marginBottom: "10px", fontWeight: "600" }}>
-              Енергия: ⚡ ({energy}/10)
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", fontWeight: "600" }}>
+              Енергия:
+              <BoltIcon style={{ width: "18px", height: "18px", strokeWidth: 2, color: "#f59e0b" }} />
+              ({energy}/10)
             </label>
             <input
               type="range"
@@ -104,8 +107,10 @@ const MoodTracker = () => {
           </div>
 
           <div style={{ marginBottom: "25px" }}>
-            <label style={{ display: "block", marginBottom: "10px", fontWeight: "600" }}>
-              Тревожност: 😰 ({anxiety}/10)
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", fontWeight: "600" }}>
+              Тревожност:
+              <ExclamationCircleIcon style={{ width: "18px", height: "18px", strokeWidth: 2, color: "#ef4444" }} />
+              ({anxiety}/10)
             </label>
             <input
               type="range"
@@ -151,7 +156,8 @@ const MoodTracker = () => {
               width: "100%",
             }}
           >
-            💾 Запази запис
+            <CheckCircleIcon style={{ width: "20px", height: "20px", strokeWidth: 2, marginRight: "6px", display: "inline" }} />
+            Запази запис
           </button>
         </form>
       </div>
@@ -164,7 +170,10 @@ const MoodTracker = () => {
           boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
         }}
       >
-        <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>📈 История</h2>
+        <h2 style={{ marginBottom: "20px", color: "#2d3748", display: "flex", alignItems: "center", gap: "8px" }}>
+          <ChartBarIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />
+          История
+        </h2>
         {entries.length === 0 ? (
           <p style={{ textAlign: "center", color: "#718096" }}>
             Все още няма записи. Добавете първия си запис!
@@ -187,7 +196,9 @@ const MoodTracker = () => {
                   <span style={{ fontWeight: "600" }}>
                     {new Date(entry.date).toLocaleDateString("bg-BG")}
                   </span>
-                  <span>{getMoodEmoji(entry.mood)}</span>
+                  <span>
+                    {React.createElement(getMoodIcon(entry.mood), { style: { width: "20px", height: "20px", strokeWidth: 2, color: entry.mood <= 5 ? "#ef4444" : "#22c55e" } })}
+                  </span>
                 </div>
                 <div
                   style={{ display: "flex", gap: "20px", marginBottom: "10px", fontSize: "14px" }}

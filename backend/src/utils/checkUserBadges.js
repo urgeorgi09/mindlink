@@ -1,44 +1,34 @@
-import Badge from '../models/Badge.js';
-import UserStats from '../models/UserStats.js';
-
-/**
- * Returns array of newly unlocked badge objects (saved)
- */
 export const checkUserBadges = async (userId) => {
-  const stats = await UserStats.findOne({ userId });
+  // 1. Взимаме статистиката и вече отключените значки едновременно
+  const [stats, alreadyUnlocked] = await Promise.all([
+    UserStats.findOne({ where: { userId } }),
+    UserBadge.findAll({ where: { userId }, attributes: ['badgeId'] })
+  ]);
+
   if (!stats) return [];
 
-  // Define conditions. Adjust ids / thresholds as you like.
-  const conditions = [
-    { badgeId: 'chatbot_10', check: () => (stats.chatbotMessages || 0) >= 10 },
-    { badgeId: 'journal_5', check: () => (stats.journalEntries || 0) >= 5 },
-    { badgeId: 'streak_7', check: () => (stats.loginStreak || 0) >= 7 },
-    { badgeId: 'breathing_20', check: () => (stats.breathingExercises || 0) >= 20 },
-    { badgeId: 'ai_chat_10', check: () => (stats.aiConversations || 0) >= 10 },
-  ];
+  const unlockedIds = new Set(alreadyUnlocked.map(b => b.badgeId));
 
+  // 2. Взимаме всички дефиниции на значки само веднъж
+  const allBadges = await Badge.findAll();
   const newlyUnlocked = [];
 
-  for (const cond of conditions) {
-    const badgeDoc = await Badge.findOne({ badgeId: cond.badgeId });
-    // If badge definition missing in DB, skip
-    if (!badgeDoc) continue;
+  // 3. Логика за проверка (изнесена или параметризирана)
+  for (const badge of allBadges) {
+    if (unlockedIds.has(badge.id)) continue;
 
-    // If already unlocked for this user, skip
-    if ((badgeDoc.unlockedBy || []).includes(userId)) continue;
-
-    // If condition passes, unlock
-    if (cond.check()) {
-      badgeDoc.unlockedBy.push(userId);
-      await badgeDoc.save();
-      newlyUnlocked.push({
-        badgeId: badgeDoc.badgeId,
-        name: badgeDoc.name,
-        description: badgeDoc.description,
-        category: badgeDoc.category,
-        color: badgeDoc.color
-      });
+    // Динамична проверка на условията
+    const userValue = stats[badge.targetField] || 0;
+    if (userValue >= badge.threshold) {
+      newlyUnlocked.push(badge);
     }
+  }
+
+  // 4. Масово записване на новите постижения (Bulk Create)
+  if (newlyUnlocked.length > 0) {
+    await UserBadge.bulkCreate(
+      newlyUnlocked.map(b => ({ userId, badgeId: b.id }))
+    );
   }
 
   return newlyUnlocked;

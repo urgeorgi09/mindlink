@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Инсталирай wget за healthcheck
+RUN apk add --no-cache wget
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 5001
+
+CMD ["node", "src/server-optimized.js"]

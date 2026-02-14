@@ -1,214 +1,108 @@
 import express from 'express';
 import { requireAuth } from '../middleware/authMiddleware.js';
-import { requireRole, requirePermission } from '../middleware/roleMiddleware.js';
-import User from '../models/User.js';
-import ChatMessage from '../models/ChatMessage.js';
-import Journal from '../models/Journal.js';
-import Emotion from '../models/Emotion.js';
+import { restrictTo } from '../middleware/authMiddleware.js'; // Използваме оптимизирания middleware
+import { User, ChatMessage, Journal, Emotion } from '../models/index.js';
+import { Op, fn, col } from 'sequelize';
 
 const router = express.Router();
 
-// All admin routes require authentication and admin role
+// Сигурност: Само админи имат достъп до тези маршрути
 router.use(requireAuth);
-router.use(requireRole('admin'));
+router.use(restrictTo('admin'));
 
 /**
  * GET /api/admin/users
- * Get all users with pagination
+ * Търсене и пагинация
  */
 router.get('/users', async (req, res) => {
   try {
     const { page = 1, limit = 20, role, search } = req.query;
-    const query = {};
-    
-    if (role && ['user', 'therapist', 'admin'].includes(role)) {
-      query.role = role;
-    }
-    
+    const offset = (page - 1) * limit;
+
+    const whereClause = {};
+    if (role) whereClause.role = role;
     if (search) {
-      query._id = { $regex: search, $options: 'i' };
+      // Търсене по имейл или потребителско име чрез ILIKE
+      whereClause[Op.or] = [
+        { email: { [Op.iLike]: `%${search}%` } },
+        { username: { [Op.iLike]: `%${search}%` } }
+      ];
     }
 
-    const users = await User.find(query)
-      .select('-backupKey')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await User.countDocuments(query);
+    const { count, rows: users } = await User.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['createdAt', 'DESC']],
+      attributes: { exclude: ['password'] } // Никога не връщаме пароли
+    });
 
     res.json({
       success: true,
       users,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
+        total: count,
+        pages: Math.ceil(count / limit),
+        currentPage: parseInt(page)
       }
     });
   } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/users/:userId
- * Get specific user details
- */
-router.get('/users/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    
-    const user = await User.findById(userId).select('-backupKey');
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    // Get user activity stats
-    const [chatCount, journalCount, emotionCount] = await Promise.all([
-      ChatMessage.countDocuments({ userId }),
-      Journal.countDocuments({ userId }),
-      Emotion.countDocuments({ userId })
-    ]);
-
-    res.json({
-      success: true,
-      user: {
-        ...user.toObject(),
-        activityStats: {
-          chatMessages: chatCount,
-          journalEntries: journalCount,
-          emotionEntries: emotionCount
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * PUT /api/admin/users/:userId/role
- * Update user role
- */
-router.put('/users/:userId/role', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { role } = req.body;
-
-    if (!['user', 'therapist', 'admin'].includes(role)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Invalid role. Must be user, therapist, or admin' 
-      });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { role },
-      { new: true }
-    ).select('-backupKey');
-
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    res.json({
-      success: true,
-      message: `User role updated to ${role}`,
-      user
-    });
-  } catch (error) {
-    console.error('Update user role error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * DELETE /api/admin/users/:userId
- * Delete user and all associated data
+ * Използваме транзакция за пълна сигурност
  */
 router.delete('/users/:userId', async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { userId } = req.params;
-    const { confirmation } = req.body;
 
-    if (confirmation !== 'DELETE') {
-      return res.status(400).json({
-        success: false,
-        error: 'Confirmation required. Send "DELETE" in confirmation field'
-      });
-    }
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ success: false, error: 'Потребителят не е намерен' });
 
-    // Delete user and all associated data
-    await Promise.all([
-      User.findByIdAndDelete(userId),
-      ChatMessage.deleteMany({ userId }),
-      Journal.deleteMany({ userId }),
-      Emotion.deleteMany({ userId })
-    ]);
+    // Благодарение на ON DELETE CASCADE в Postgres, 
+    // изтриването на потребителя ще изтрие всичко свързано с него.
+    await user.destroy({ transaction: t });
 
-    res.json({
-      success: true,
-      message: 'User and all associated data deleted successfully'
-    });
+    await t.commit();
+    res.json({ success: true, message: 'Потребителят и всички негови данни са изтрити' });
   } catch (error) {
-    console.error('Delete user error:', error);
+    await t.rollback();
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * GET /api/admin/stats
- * Get system statistics
+ * Оптимизирана статистика
  */
 router.get('/stats', async (req, res) => {
   try {
-    const [
-      totalUsers,
-      activeUsers,
-      usersByRole,
-      totalChats,
-      totalJournals,
-      totalEmotions
-    ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ 
-        lastActive: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } 
-      }),
-      User.aggregate([
-        { $group: { _id: '$role', count: { $sum: 1 } } }
-      ]),
-      ChatMessage.countDocuments(),
-      Journal.countDocuments(),
-      Emotion.countDocuments()
+    const stats = await Promise.all([
+      User.count(),
+      User.count({ where: { role: 'therapist' } }),
+      Journal.count(),
+      ChatMessage.count(),
+      // Групиране по роли чрез Sequelize
+      User.findAll({
+        attributes: ['role', [fn('COUNT', col('role')), 'count']],
+        group: ['role']
+      })
     ]);
-
-    const roleStats = usersByRole.reduce((acc, item) => {
-      acc[item._id] = item.count;
-      return acc;
-    }, { user: 0, therapist: 0, admin: 0 });
 
     res.json({
       success: true,
-      stats: {
-        users: {
-          total: totalUsers,
-          active: activeUsers,
-          byRole: roleStats
-        },
-        content: {
-          chatMessages: totalChats,
-          journalEntries: totalJournals,
-          emotionEntries: totalEmotions
-        }
+      data: {
+        totalUsers: stats[0],
+        therapists: stats[1],
+        content: { journals: stats[2], messages: stats[3] },
+        breakdown: stats[4]
       }
     });
   } catch (error) {
-    console.error('Get stats error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

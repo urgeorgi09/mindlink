@@ -1,0 +1,63 @@
+/* Mobile Responsive Styles for Admin Frontend */
+@media (max-width: 768px) {
+  /* Grid layouts to single column */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Flex layouts to wrap */
+  [style*="display: flex"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Reduce padding */
+  [style*="padding: 40px"],
+  [style*="padding: 50px"] {
+    padding: 20px !important;
+  }
+
+  /* Font sizes */
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h3 {
+    font-size: 1.3rem !important;
+  }
+
+  /* Buttons full width */
+  button {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Cards */
+  [style*="border-radius: 16px"],
+  [style*="border-radius: 20px"] {
+    padding: 20px !important;
+  }
+
+  /* Tables */
+  table {
+    font-size: 14px !important;
+  }
+
+  td, th {
+    padding: 8px !important;
+  }
+
+  /* Forms */
+  input, textarea, select {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Stats cards */
+  [style*="minmax(250px"] {
+    grid-template-columns: 1fr !important;
+  }
+}

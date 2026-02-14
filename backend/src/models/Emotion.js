@@ -1,13 +1,46 @@
-// backend/src/models/Emotion.js
-import mongoose from "mongoose";
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
 
-const EmotionSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true },
-  mood: { type: Number, required: true, min: 1, max: 5 },
-  energy: { type: Number, required: true, min: 1, max: 5 },
-  note: { type: String, default: "" },
-  noteEnc: { type: String },
-  timestamp: { type: Date, default: Date.now, index: true }
-}, { timestamps: true });
+const Emotion = sequelize.define('Emotion', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID, // В Postgres използваме UUID за по-добра сигурност и мащабируемост
+    allowNull: false,
+    index: true
+  },
+  mood: {
+    type: DataTypes.SMALLINT, // Оптимизиран тип за стойности 1-5
+    allowNull: false,
+    validate: { min: 1, max: 5 }
+  },
+  energy: {
+    type: DataTypes.SMALLINT,
+    allowNull: false,
+    validate: { min: 1, max: 5 }
+  },
+  // Съхраняваме само криптираната бележка
+  noteEnc: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  timestamp: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    index: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'emotions',
+  // Индекс за бързо извличане на хронологията на конкретен потребител
+  indexes: [
+    {
+      fields: ['userId', 'timestamp']
+    }
+  ]
+});
 
-export default mongoose.models.Emotion || mongoose.model("Emotion", EmotionSchema);
+export default Emotion;

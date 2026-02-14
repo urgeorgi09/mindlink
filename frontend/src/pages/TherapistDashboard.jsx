@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useToast } from "../context/ToastContext";
+import { UserGroupIcon, PencilIcon, CheckCircleIcon, CameraIcon } from '../components/Icons';
 
 const TherapistDashboard = () => {
+  const toast = useToast();
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -72,13 +75,13 @@ const TherapistDashboard = () => {
 
       if (response.ok) {
         setEditing(false);
-        alert("Профилът е обновен успешно!");
+        toast.success("Профилът е обновен успешно!");
       } else {
-        alert("Грешка при обновяване на профила");
+        toast.error("Грешка при обновяване на профила");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Грешка при обновяване на профила");
+      toast.error("Грешка при обновяване на профила");
     }
   };
 
@@ -96,7 +99,7 @@ const TherapistDashboard = () => {
         style={{
           background: "white",
           borderRadius: "16px",
-          padding: "30px",
+          padding: window.innerWidth < 768 ? "20px" : "30px",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
         }}
       >
@@ -104,11 +107,13 @@ const TherapistDashboard = () => {
         <div
           style={{
             display: "flex",
+            flexDirection: window.innerWidth < 768 ? "column" : "row",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: window.innerWidth < 768 ? "flex-start" : "center",
             marginBottom: "30px",
             paddingBottom: "20px",
             borderBottom: "2px solid #e5e7eb",
+            gap: "15px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
@@ -133,7 +138,7 @@ const TherapistDashboard = () => {
                 }}
                 onClick={editing ? () => document.getElementById("imageUpload").click() : undefined}
               >
-                {!profile.profileImage && "🩺"}
+                {!profile.profileImage && <UserGroupIcon style={{ width: "36px", height: "36px", strokeWidth: 2 }} />}
                 {profile.profileImage && (
                   <div
                     style={{
@@ -152,7 +157,7 @@ const TherapistDashboard = () => {
                       border: "2px solid white",
                     }}
                   >
-                    🩺
+                    <UserGroupIcon style={{ width: "12px", height: "12px", strokeWidth: 2.5 }} />
                   </div>
                 )}
                 {editing && (
@@ -174,7 +179,7 @@ const TherapistDashboard = () => {
                       cursor: "pointer",
                     }}
                   >
-                    📷
+                    <CameraIcon style={{ width: "12px", height: "12px", strokeWidth: 2.5 }} />
                   </div>
                 )}
               </div>
@@ -205,15 +210,26 @@ const TherapistDashboard = () => {
               cursor: "pointer",
               fontSize: "16px",
               fontWeight: 600,
+              width: window.innerWidth < 768 ? "100%" : "auto",
             }}
           >
-            {editing ? "💾 Запази" : "✏️ Редактирай"}
+            {editing ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <CheckCircleIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+                Запази
+              </span>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <PencilIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+                Редактирай
+              </span>
+            )}
           </button>
         </div>
 
         {/* Форма */}
         <div style={{ display: "grid", gap: "20px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", gap: "20px" }}>
             <div>
               <label
                 style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
@@ -261,7 +277,7 @@ const TherapistDashboard = () => {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", gap: "20px" }}>
             <div>
               <label
                 style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
@@ -315,52 +331,54 @@ const TherapistDashboard = () => {
             </div>
           </div>
 
-          <div>
-            <label
-              style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
-            >
-              Телефон
-            </label>
-            <input
-              type="tel"
-              value={profile.phone}
-              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              disabled={!editing}
-              placeholder="напр. +359 888 123 456"
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "2px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "16px",
-                background: editing ? "white" : "#f9fafb",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
+          <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", gap: "20px" }}>
+            <div>
+              <label
+                style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
+              >
+                Телефон
+              </label>
+              <input
+                type="tel"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                disabled={!editing}
+                placeholder="напр. +359 888 123 456"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  background: editing ? "white" : "#f9fafb",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
 
-          <div>
-            <label
-              style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
-            >
-              Образование
-            </label>
-            <input
-              type="text"
-              value={profile.education}
-              onChange={(e) => setProfile({ ...profile, education: e.target.value })}
-              disabled={!editing}
-              placeholder="напр. Магистър по психология, СУ"
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "2px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "16px",
-                background: editing ? "white" : "#f9fafb",
-                boxSizing: "border-box",
-              }}
-            />
+            <div>
+              <label
+                style={{ display: "block", marginBottom: "8px", fontWeight: 600, color: "#374151" }}
+              >
+                Образование
+              </label>
+              <input
+                type="text"
+                value={profile.education}
+                onChange={(e) => setProfile({ ...profile, education: e.target.value })}
+                disabled={!editing}
+                placeholder="напр. Магистър по психология, СУ"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  background: editing ? "white" : "#f9fafb",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
           </div>
 
           <div>
@@ -427,7 +445,8 @@ const TherapistDashboard = () => {
                   fontWeight: 600,
                 }}
               >
-                💾 Запази промените
+                <CheckCircleIcon style={{ width: "20px", height: "20px", strokeWidth: 2, marginRight: "6px", display: "inline" }} />
+                Запази промените
               </button>
             </div>
           )}

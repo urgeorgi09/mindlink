@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { PencilSquareIcon, DocumentTextIcon, PlusIcon, ArrowLeftIcon } from '../components/Icons';
 
 const TherapistNotes = () => {
   const [patients, setPatients] = useState([]);
@@ -75,17 +76,26 @@ const TherapistNotes = () => {
   };
 
   return (
-    <div style={{ display: "flex", height: "80vh", maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ display: "flex", flexDirection: window.innerWidth < 768 ? "column" : "row", height: "80vh", maxWidth: "1400px", margin: "0 auto" }}>
       {/* Списък с пациенти */}
       <div
         style={{
-          width: "300px",
-          borderRight: "1px solid #e5e7eb",
+          width: window.innerWidth < 768 ? "100%" : "320px",
+          minWidth: window.innerWidth < 768 ? "auto" : "320px",
+          height: window.innerWidth < 768 ? (selectedPatient ? "0" : "100%") : "100%",
+          overflow: window.innerWidth < 768 && selectedPatient ? "hidden" : "visible",
+          borderRight: window.innerWidth < 768 ? "none" : "1px solid #e5e7eb",
+          borderBottom: window.innerWidth < 768 ? "1px solid #e5e7eb" : "none",
           background: "#f9fafb",
+          display: window.innerWidth < 768 && selectedPatient ? "none" : "flex",
+          flexDirection: "column",
         }}
       >
         <div style={{ padding: "20px", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ margin: 0, color: "#9333ea" }}>📝 Пациенти</h2>
+          <h2 style={{ margin: 0, color: "#9333ea", display: "flex", alignItems: "center", gap: "8px" }}>
+            <PencilSquareIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />
+            Пациенти
+          </h2>
         </div>
 
         <div style={{ overflowY: "auto", height: "calc(100% - 80px)" }}>
@@ -115,34 +125,64 @@ const TherapistNotes = () => {
       </div>
 
       {/* Бележки */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {selectedPatient ? (
           <>
             {/* Хедър */}
             <div
               style={{
-                padding: "20px",
+                padding: "15px 20px",
                 borderBottom: "1px solid #e5e7eb",
                 background: "white",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                gap: "10px",
+                flexWrap: "wrap",
               }}
             >
-              <h3 style={{ margin: 0, color: "#9333ea" }}>📋 Бележки за {selectedPatient.name}</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                {window.innerWidth < 768 && (
+                  <button
+                    onClick={() => setSelectedPatient(null)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                    }}
+                  >
+                  <ArrowLeftIcon style={{ width: "20px", height: "20px", strokeWidth: 2.5 }} />
+                  </button>
+                )}
+                <h3 style={{ margin: 0, color: "#9333ea", fontSize: "clamp(16px, 4vw, 20px)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <DocumentTextIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+                  Бележки за {selectedPatient.name}
+                </h3>
+              </div>
               <button
                 onClick={() => setShowAddNote(true)}
                 style={{
-                  padding: "8px 16px",
+                  padding: window.innerWidth < 768 ? "8px 12px" : "8px 16px",
                   background: "#22c55e",
                   color: "white",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer",
-                  fontSize: "14px",
+                  fontSize: window.innerWidth < 768 ? "13px" : "14px",
+                  fontWeight: "600",
+                  whiteSpace: "nowrap",
                 }}
               >
-                ➕ Нова бележка
+                {window.innerWidth < 768 ? (
+                  <PlusIcon style={{ width: "18px", height: "18px", strokeWidth: 2.5 }} />
+                ) : (
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <PlusIcon style={{ width: "16px", height: "16px", strokeWidth: 2.5 }} />
+                    Нова бележка
+                  </span>
+                )}
               </button>
             </div>
 
@@ -151,7 +191,7 @@ const TherapistNotes = () => {
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "20px",
+                padding: window.innerWidth < 768 ? "12px" : "20px",
                 background: "#f9fafb",
               }}
             >
@@ -160,26 +200,29 @@ const TherapistNotes = () => {
                   key={note.id}
                   style={{
                     background: "white",
-                    borderRadius: "8px",
-                    padding: "15px",
+                    borderRadius: "12px",
+                    padding: window.innerWidth < 768 ? "12px" : "15px",
                     marginBottom: "15px",
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                    border: "1px solid #e5e7eb",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       marginBottom: "10px",
+                      gap: "10px",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <h4 style={{ margin: 0, color: "#1f2937" }}>{note.title}</h4>
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                    <h4 style={{ margin: 0, color: "#1f2937", fontSize: "clamp(15px, 3vw, 17px)", flex: 1 }}>{note.title}</h4>
+                    <span style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "nowrap" }}>
                       {new Date(note.date).toLocaleDateString("bg-BG")}
                     </span>
                   </div>
-                  <p style={{ margin: 0, color: "#4b5563", lineHeight: "1.5" }}>{note.content}</p>
+                  <p style={{ margin: 0, color: "#4b5563", lineHeight: "1.6", fontSize: "clamp(13px, 2.5vw, 15px)" }}>{note.content}</p>
                 </div>
               ))}
 
@@ -238,16 +281,19 @@ const TherapistNotes = () => {
               left: "50%",
               transform: "translate(-50%, -50%)",
               background: "white",
-              padding: "30px",
-              borderRadius: "12px",
+              padding: window.innerWidth < 768 ? "20px" : "30px",
+              borderRadius: "16px",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
               zIndex: 10000,
               width: "90%",
               maxWidth: "500px",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
-            <h3 style={{ margin: "0 0 20px 0", color: "#9333ea" }}>
-              ➕ Нова бележка за {selectedPatient?.name}
+            <h3 style={{ margin: "0 0 20px 0", color: "#9333ea", fontSize: "clamp(16px, 4vw, 20px)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <PlusIcon style={{ width: "20px", height: "20px", strokeWidth: 2.5 }} />
+              Нова бележка за {selectedPatient?.name}
             </h3>
 
             <input
@@ -257,10 +303,10 @@ const TherapistNotes = () => {
               onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: window.innerWidth < 768 ? "10px" : "12px",
                 border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "16px",
+                borderRadius: "8px",
+                fontSize: window.innerWidth < 768 ? "14px" : "16px",
                 marginBottom: "15px",
                 boxSizing: "border-box",
               }}
@@ -273,26 +319,29 @@ const TherapistNotes = () => {
               rows={6}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: window.innerWidth < 768 ? "10px" : "12px",
                 border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "16px",
+                borderRadius: "8px",
+                fontSize: window.innerWidth < 768 ? "14px" : "16px",
                 marginBottom: "20px",
                 boxSizing: "border-box",
                 resize: "vertical",
+                fontFamily: "inherit",
               }}
             />
 
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", flexWrap: "wrap" }}>
               <button
                 onClick={() => setShowAddNote(false)}
                 style={{
-                  padding: "10px 20px",
+                  padding: window.innerWidth < 768 ? "8px 16px" : "10px 20px",
                   background: "#6b7280",
                   color: "white",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer",
+                  fontSize: window.innerWidth < 768 ? "14px" : "15px",
+                  fontWeight: "600",
                 }}
               >
                 Отказ
@@ -300,12 +349,14 @@ const TherapistNotes = () => {
               <button
                 onClick={addNote}
                 style={{
-                  padding: "10px 20px",
+                  padding: window.innerWidth < 768 ? "8px 16px" : "10px 20px",
                   background: "#22c55e",
                   color: "white",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer",
+                  fontSize: window.innerWidth < 768 ? "14px" : "15px",
+                  fontWeight: "600",
                 }}
               >
                 Запази

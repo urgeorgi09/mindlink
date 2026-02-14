@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  admin-backend:
+    build: ./admin-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_NAME=mindlink_admin
+      - DB_USER=postgres
+      - DB_PASSWORD=050310
+      - JWT_SECRET=mindlink_admin_secret_2025
+    volumes:
+      - ./admin-backend:/app
+      - /app/node_modules
+    command: npm start
+
+  admin-frontend:
+    build: ./admin-frontend
+    ports:
+      - "0.0.0.0:5174:5174"
+    environment:
+      - HOST=0.0.0.0
+
+
+    volumes:
+      - ./admin-frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - admin-backend

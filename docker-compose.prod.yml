@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # PostgreSQL (една база данни, 2 схеми/databases)
+  postgres:
+    image: postgres:16-alpine
+    container_name: mindlink-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./backups:/backups
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mindlink-network
+
+  # Main Backend
+  backend:
+    build: ./backend
+    container_name: mindlink-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: 5000
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mindlink-network
+
+  # Admin Backend
+  admin-backend:
+    build: ./admin-backend
+    container_name: mindlink-admin-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${ADMIN_DATABASE_URL}
+      PORT: 5001
+    expose:
+      - "5001"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mindlink-network
+
+  # Main Frontend
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: mindlink-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+    networks:
+      - mindlink-network
+
+  # Admin Frontend
+  admin-frontend:
+    build:
+      context: ./admin-frontend
+      args:
+        VITE_API_URL: ${VITE_ADMIN_API_URL}
+    container_name: mindlink-admin-frontend
+    restart: unless-stopped
+    depends_on:
+      - admin-backend
+    expose:
+      - "3001"
+    networks:
+      - mindlink-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mindlink-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - admin-frontend
+      - backend
+      - admin-backend
+    networks:
+      - mindlink-network
+
+volumes:
+  postgres_data:
+
+networks:
+  mindlink-network:
+    driver: bridge

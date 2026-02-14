@@ -1,5 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { restrictTo } from '../middleware/authMiddleware.js'; 
 import {
   getTherapistConversations,
   getAvailableTherapists,
@@ -10,22 +11,25 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(requireAuth);
 
-// Get available therapists (for users)
+/**
+ * ЗА ПОТРЕБИТЕЛИ
+ * Търсене на сертифицирани специалисти
+ */
 router.get('/available-therapists', getAvailableTherapists);
-
-// Start conversation with therapist
 router.post('/start-conversation', startConversation);
 
-// Get conversations (for therapists)
-router.get('/conversations', getTherapistConversations);
+/**
+ * ЗА ТЕРАПЕВТИ
+ * Само регистрирани терапевти виждат списъка си с пациенти
+ */
+router.get('/conversations', restrictTo('therapist'), getTherapistConversations);
 
-// Get messages for conversation
+/**
+ * ОБЩИ (СЪС СТРИКТНА ПРОВЕРКА НА СОБСТВЕНОСТ)
+ */
 router.get('/messages/:conversationId', getConversationMessages);
-
-// Send message
 router.post('/send-message', sendMessage);
 
 export default router;

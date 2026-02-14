@@ -1,0 +1,17 @@
+/* Global text alignment */
+* {
+  text-align: center;
+}
+
+/* Exceptions for specific elements that should not be centered */
+input,
+textarea,
+select {
+  text-align: left;
+}
+
+/* Keep navigation items centered */
+.nav-links a,
+.nav-links button {
+  text-align: center;
+}

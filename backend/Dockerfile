@@ -1,19 +1,15 @@
 FROM node:20-alpine
 
-# Създаваме работна папка
 WORKDIR /app
 
-# Копираме файловете за библиотеките
+# Инсталирай wget за healthcheck
+RUN apk add --no-cache wget
+
 COPY package*.json ./
+RUN npm ci --only=production
 
-# Инсталираме зависимостите (използваме install, защото видяхме, че ci прави проблем)
-RUN npm install
-
-# Копираме целия останал код
 COPY . .
 
-# Експонираме порта, на който работи твоя Express сървър
 EXPOSE 5000
 
-# Стартираме сървъра
-CMD ["npm", "start"]
+CMD ["node", "src/server-postgres.js"]

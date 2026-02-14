@@ -313,6 +313,67 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     }
 });
 
+// Get therapist profile by ID (public)
+app.get('/api/therapist/profile/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'SELECT id, name, specialty, experience, description, phone, education, profile_image, verified, session_price FROM users WHERE id = $1 AND role = $2',
+            [id, 'therapist']
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Терапевтът не е намерен' });
+        }
+
+        res.json({ therapist: result.rows[0] });
+    } catch (error) {
+        console.error('Error fetching therapist profile:', error);
+        res.status(500).json({ message: 'Грешка при зареждане на профила' });
+    }
+});
+
+// Get therapist profile
+app.get('/api/therapist/profile', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, name, email, specialty, experience, description, phone, education, profile_image, verified, session_price FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Потребителят не е намерен' });
+        }
+
+        res.json({ therapist: result.rows[0] });
+    } catch (error) {
+        console.error('Error fetching therapist:', error);
+        res.status(500).json({ message: 'Грешка при зареждане на профила' });
+    }
+});
+
+// Update therapist profile
+app.put('/api/therapist/profile', authenticateToken, async (req, res) => {
+    try {
+        const { experience, phone, education, sessionPrice, profileImage, description } = req.body;
+        
+        if (req.user.role !== 'therapist') {
+            return res.status(403).json({ message: 'Достъп отказан' });
+        }
+        
+        await pool.query(
+            'UPDATE users SET experience = $1, phone = $2, education = $3, session_price = $4, profile_image = $5, description = $6 WHERE id = $7',
+            [experience, phone, education, sessionPrice, profileImage, description, req.user.id]
+        );
+        
+        res.json({ message: 'Профилът е обновен успешно' });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ message: 'Грешка при обновяване на профила' });
+    }
+});
+
 // Get all users (admin only)
 app.get('/api/admin/users', authenticateToken, async (req, res) => {
     try {
@@ -374,13 +435,9 @@ app.get('/api/admin/therapists/unverified', authenticateToken, async (req, res) 
 });
 
 // Admin: Verify therapist
-app.post('/api/admin/therapists/verify', authenticateToken, async (req, res) => {
+app.post('/api/admin/therapists/verify', async (req, res) => {
     try {
         const { therapistId } = req.body;
-        
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Достъп отказан' });
-        }
         
         await pool.query(
             'UPDATE users SET verified = true WHERE id = $1 AND role = $2',
@@ -1052,6 +1109,30 @@ app.post('/api/admin/verify/:id', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error updating verification:', error);
         res.status(500).json({ message: 'Грешка при обновяване на верификацията' });
+    }
+});
+
+// Admin sync endpoint - get all data for admin dashboard
+app.get('/api/admin/sync-data', async (req, res) => {
+    try {
+        const users = await pool.query('SELECT id, name, email, role, specialty, verified, uin, created_at FROM users ORDER BY created_at DESC');
+        const messages = await pool.query('SELECT id, text, sender_id, recipient_id, timestamp, is_read, is_important FROM messages ORDER BY timestamp DESC');
+        const moodEntries = await pool.query('SELECT id, user_id, mood, energy, anxiety, notes, date FROM mood_entries ORDER BY date DESC');
+        const journalEntries = await pool.query('SELECT id, user_id, title, content, category, word_count, date FROM journal_entries ORDER BY date DESC');
+        const notes = await pool.query('SELECT id, title, content, patient_id, therapist_id, date FROM notes ORDER BY date DESC');
+        const therapistPatients = await pool.query('SELECT id, therapist_id, patient_id, assigned_at FROM therapist_patients');
+        
+        res.json({
+            users: users.rows,
+            messages: messages.rows,
+            moodEntries: moodEntries.rows,
+            journalEntries: journalEntries.rows,
+            notes: notes.rows,
+            therapistPatients: therapistPatients.rows
+        });
+    } catch (error) {
+        console.error('Error syncing data:', error);
+        res.status(500).json({ message: 'Грешка при синхронизация' });
     }
 });
 

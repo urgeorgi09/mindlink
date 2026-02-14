@@ -137,7 +137,7 @@ ${recentData
 3. Конкретни препоръки за подобрение
 4. Позитивна бележка или окуражаване`;
 
-      const response = await axios.post("http://localhost:5000/api/chat/ai", { message: prompt });
+      const response = await axios.post("/api/chat/ai", { message: prompt });
 
       const analysis = response.data?.reply || "Няма отговор от AI.";
 
@@ -187,7 +187,7 @@ ${recentData
 - Има ли притеснителни модели?
 - Една конкретна препоръка за подобрение на настроението.`;
 
-      const response = await axios.post("http://localhost:5000/api/chat/ai", { message: prompt });
+      const response = await axios.post("/api/chat/ai", { message: prompt });
 
       setMoodAnalysis(response.data?.reply || "Няма отговор.");
     } catch (err) {
@@ -232,7 +232,7 @@ ${recentData
 - Има ли признаци на изтощение или дисбаланс?
 - Една конкретна препоръка за повишаване на енергията (сън, хранене, движение).`;
 
-      const response = await axios.post("http://localhost:5000/api/chat/ai", { message: prompt });
+      const response = await axios.post("/api/chat/ai", { message: prompt });
 
       setEnergyAnalysis(response.data?.reply || "Няма отговор.");
     } catch (err) {

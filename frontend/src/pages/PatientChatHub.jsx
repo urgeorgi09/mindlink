@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBatchStatus } from "../hooks/usePresence";
 import { StatusBadge } from "../components/StatusBadge";
+import { UserGroupIcon, ChatBubbleLeftRightIcon, MagnifyingGlassIcon, InformationCircleIcon } from '../components/Icons';
 
 const PatientChatHub = () => {
   const [therapists, setTherapists] = useState([]);
@@ -56,7 +57,7 @@ const PatientChatHub = () => {
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
           }}
         >
-          <div style={{ fontSize: "64px", marginBottom: "20px" }}>👩‍⚕️</div>
+          <UserGroupIcon style={{ width: "64px", height: "64px", color: "#6b7280", strokeWidth: 1.5, marginBottom: "20px" }} />
           <h2 style={{ color: "#6b7280", marginBottom: "15px" }}>Нямате назначен терапевт</h2>
           <p style={{ color: "#9ca3af", marginBottom: "25px" }}>
             За да можете да чатите с терапевт, трябва първо да изпратите заявка и тя да бъде одобрена.
@@ -65,7 +66,7 @@ const PatientChatHub = () => {
             onClick={() => navigate("/therapists")}
             style={{
               padding: "12px 24px",
-              background: "#22c55e",
+              background: "#91c481",
               color: "white",
               border: "none",
               borderRadius: "8px",
@@ -74,7 +75,8 @@ const PatientChatHub = () => {
               fontSize: "16px",
             }}
           >
-            🔍 Намери терапевт
+            <MagnifyingGlassIcon style={{ width: "20px", height: "20px", marginRight: "8px", display: "inline" }} />
+            Намери терапевт
           </button>
         </div>
       </div>
@@ -83,7 +85,10 @@ const PatientChatHub = () => {
 
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ marginBottom: "30px", color: "#1f2937" }}>💬 Моите терапевти</h1>
+      <h1 style={{ marginBottom: "30px", color: "#1f2937", display: "flex", alignItems: "center", gap: "10px" }}>
+        <ChatBubbleLeftRightIcon style={{ width: "32px", height: "32px", strokeWidth: 2 }} />
+        Моите терапевти
+      </h1>
 
       <div
         style={{
@@ -113,7 +118,7 @@ const PatientChatHub = () => {
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
                 e.currentTarget.style.boxShadow = "0 8px 20px rgba(0, 0, 0, 0.15)";
-                e.currentTarget.style.borderColor = "#22c55e";
+                e.currentTarget.style.borderColor = "#91c481";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
@@ -153,7 +158,7 @@ const PatientChatHub = () => {
                       height: "60px",
                       borderRadius: "50%",
                       background: presenceStatus.online
-                        ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
+                        ? "linear-gradient(135deg, #91c481 0%, #7fb570 100%)"
                         : "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)",
                       display: "flex",
                       alignItems: "center",
@@ -162,7 +167,7 @@ const PatientChatHub = () => {
                       transition: "background 0.3s ease",
                     }}
                   >
-                    🩺
+                    <UserGroupIcon style={{ width: "28px", height: "28px", strokeWidth: 2 }} />
                   </div>
                   {/* Малка точка върху аватара */}
                   <div
@@ -173,7 +178,7 @@ const PatientChatHub = () => {
                       width: "14px",
                       height: "14px",
                       borderRadius: "50%",
-                      background: presenceStatus.online ? "#22c55e" : "#9ca3af",
+                      background: presenceStatus.online ? "#91c481" : "#9ca3af",
                       border: "2px solid white",
                       animation: presenceStatus.online ? "pulse-green 2s infinite" : "none",
                     }}
@@ -241,7 +246,7 @@ const PatientChatHub = () => {
                 <button
                   style={{
                     padding: "8px 16px",
-                    background: "#22c55e",
+                    background: "#91c481",
                     color: "white",
                     border: "none",
                     borderRadius: "8px",
@@ -266,14 +271,14 @@ const PatientChatHub = () => {
         style={{
           marginTop: "40px",
           padding: "20px",
-          background: "#f0fdf4",
+          background: "#e8f5e3",
           borderRadius: "12px",
-          border: "1px solid #86efac",
+          border: "1px solid #91c481",
         }}
       >
-        <p style={{ margin: 0, color: "#15803d", fontSize: "14px", textAlign: "center" }}>
-          💡 Можете да чатите с всички ваши одобрени терапевти. Кликнете на някой от тях, за да
-          започнете разговор.
+        <p style={{ margin: 0, color: "#3d5a2f", fontSize: "14px", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <InformationCircleIcon style={{ width: "18px", height: "18px", strokeWidth: 2, flexShrink: 0 }} />
+          Можете да чатите с всички ваши одобрени терапевти. Кликнете на някой от тях, за да започнете разговор.
         </p>
       </div>
     </div>

@@ -14,7 +14,7 @@ const AdminVerifications = () => {
   const fetchVerifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/verifications', {
+      const response = await axios.get('/api/admin/verifications', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVerifications(response.data.verifications);
@@ -29,7 +29,7 @@ const AdminVerifications = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/admin/verify/${id}`,
+        `/api/admin/verify/${id}`,
         { status, rejectionReason: reason },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -1,113 +1,70 @@
 import jwt from "jsonwebtoken";
-import User from '../models/User.js';
+import User from '../models/User.js'; // Твоят Sequelize модел
 
-export const authMiddleware = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const userIdHeader = req.headers["x-user-id"];
-
-  // НЯМА токен → работим като анонимен user
-  if (!authHeader) {
-    req.user = { 
-      id: userIdHeader || null,
-      anonymous: true,
-      role: 'user' // Anonymous users default to 'user' role
-    };
-    return next();
-  }
-
+/**
+ * Основна логика за верификация (Core Logic)
+ */
+const verifyToken = async (authHeader) => {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  
+  const token = authHeader.split(" ")[1];
   try {
-    const token = authHeader.split(" ")[1];
+    // Декодираме токена. Enterprise стандарт: Ролята е вътре в токена!
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Get user role from database
-    const user = await User.findById(decoded.id);
-    
-    req.user = {
+    return {
       id: decoded.id,
-      anonymous: false,
-      role: user?.role || 'user'
+      role: decoded.role || 'user',
+      anonymous: false
     };
-
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token" });
+  } catch (err) {
+    return null;
   }
 };
 
 /**
- * Optional auth middleware - doesn't require authentication
+ * Гъвкав Middleware - поддържа и анонимни, и логнати
  */
-export const optionalAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const userIdHeader = req.headers["x-user-id"];
-
-  if (!authHeader) {
-    req.user = { 
-      id: userIdHeader || null,
-      anonymous: true,
-      role: 'user'
-    };
-    return next();
+export const authMiddleware = async (req, res, next) => {
+  const authData = await verifyToken(req.headers.authorization);
+  
+  if (authData) {
+    req.user = authData;
+  } else {
+    // Анонимен потребител - НИКОГА не взимаме ID от хедър за сигурност
+    req.user = { id: null, role: 'guest', anonymous: true };
   }
-
-  try {
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    
-    req.user = {
-      id: decoded.id,
-      anonymous: false,
-      role: user?.role || 'user'
-    };
-  } catch (error) {
-    // If token is invalid, treat as anonymous
-    req.user = { 
-      id: userIdHeader || null,
-      anonymous: true,
-      role: 'user'
-    };
-  }
-
   next();
 };
 
 /**
- * Require authentication middleware
+ * Строг Middleware - изисква задължителна аутентикация
  */
 export const requireAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
+  const authData = await verifyToken(req.headers.authorization);
+  
+  if (!authData) {
     return res.status(401).json({ 
       success: false, 
-      error: 'Authentication required' 
+      error: 'Изисква се влизане в системата' 
     });
   }
 
-  try {
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    
-    if (!user) {
-      return res.status(404).json({ 
+  req.user = authData;
+  next();
+};
+
+/**
+ * Middleware за роли (Role-Based Access Control - RBAC)
+ * Пример: restrictTo('admin', 'therapist')
+ */
+export const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (req.user.anonymous || !roles.includes(req.user.role)) {
+      return res.status(403).json({ 
         success: false, 
-        error: 'User not found' 
+        error: 'Нямате права за това действие' 
       });
     }
-
-    req.user = {
-      id: decoded.id,
-      anonymous: false,
-      role: user.role
-    };
-
     next();
-  } catch (error) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Invalid token' 
-    });
-  }
+  };
 };

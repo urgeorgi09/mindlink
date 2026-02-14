@@ -19,7 +19,6 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("darkMode", JSON.stringify(darkMode));
 
-    // Set body and html styles for full coverage
     const htmlElement = document.documentElement;
     const bodyElement = document.body;
 
@@ -36,9 +35,6 @@ export const ThemeProvider = ({ children }) => {
       bodyElement.style.color = "#1e293b";
       bodyElement.classList.remove("dark-mode");
     }
-
-    htmlElement.style.transition = "all 0.3s ease";
-    bodyElement.style.transition = "all 0.3s ease";
   }, [darkMode]);
 
   const toggleDarkMode = () => {

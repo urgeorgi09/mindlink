@@ -1,0 +1,79 @@
+/* Mobile responsive styles */
+
+/* Slide down animation for mobile menu */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Navigation overlay backdrop */
+  .nav-links.responsive-nav-links::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    animation: fadeIn 0.3s ease;
+  }
+
+  /* Grid layouts */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Flex layouts */
+  [style*="display: flex"] {
+    flex-wrap: wrap !important;
+  }
+  
+  /* Padding adjustments */
+  [style*="padding: 40px"],
+  [style*="padding: 50px"] {
+    padding: 20px !important;
+  }
+  
+  /* Font size adjustments */
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Button adjustments */
+  a[style*="padding: 16px 40px"] {
+    padding: 12px 24px !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Card adjustments */
+  [style*="minmax(280px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Smooth scrolling for mobile menu */
+  .nav-links.responsive-nav-links {
+    -webkit-overflow-scrolling: touch;
+  }
+}

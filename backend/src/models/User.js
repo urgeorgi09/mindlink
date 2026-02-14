@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
+const bcrypt = require('bcryptjs');
 
 const User = sequelize.define('User', {
   id: {
@@ -16,9 +17,7 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    validate: {
-      isEmail: true
-    }
+    validate: { isEmail: true }
   },
   password: {
     type: DataTypes.STRING,
@@ -37,7 +36,23 @@ const User = sequelize.define('User', {
     defaultValue: 'none'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'users',
+  // Скриваме паролата от всички JSON отговори автоматично
+  defaultScope: {
+    attributes: { exclude: ['password'] }
+  },
+  scopes: {
+    withPassword: { attributes: {} }
+  }
+});
+
+// Автоматично хеширане на паролата преди запис
+User.beforeCreate(async (user) => {
+  if (user.password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+  }
 });
 
 module.exports = User;

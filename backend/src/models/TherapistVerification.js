@@ -10,26 +10,29 @@ const TherapistVerification = sequelize.define('TherapistVerification', {
   userId: {
     type: DataTypes.UUID,
     allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'id'
-    }
+    unique: true, // Един потребител може да има само една активна заявка
+    references: { model: 'Users', key: 'id' }
   },
   licenseNumber: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique: true // Предотвратява дублиране на лицензи
   },
+  // Enterprise стандарт: Съхраняваме метаданни за документа
   documentUrl: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: false,
+    comment: 'Secure link to private storage (S3/Cloud)'
   },
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'rejected'),
-    defaultValue: 'pending'
+    defaultValue: 'pending',
+    index: true // Оптимизация за админ панела
   },
   reviewedBy: {
     type: DataTypes.UUID,
-    allowNull: true
+    allowNull: true,
+    references: { model: 'Users', key: 'id' } // Връзка към админа
   },
   reviewedAt: {
     type: DataTypes.DATE,
@@ -40,7 +43,12 @@ const TherapistVerification = sequelize.define('TherapistVerification', {
     allowNull: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'therapist_verifications',
+  indexes: [
+    { fields: ['status'] },
+    { fields: ['userId'] }
+  ]
 });
 
 module.exports = TherapistVerification;

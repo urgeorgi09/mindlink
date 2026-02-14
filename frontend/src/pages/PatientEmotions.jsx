@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { ChartBarIcon } from '../components/Icons';
 
 const PatientEmotions = () => {
   const { patientId } = useParams();
@@ -91,7 +92,10 @@ const PatientEmotions = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ marginBottom: '30px' }}>📊 Емоционален анализ - {patientName}</h1>
+      <h1 style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <ChartBarIcon style={{ width: '32px', height: '32px', strokeWidth: 2 }} />
+        Емоционален анализ - {patientName}
+      </h1>
 
       {/* Date Filter */}
       <div style={{ 
@@ -196,7 +200,9 @@ const PatientEmotions = () => {
           borderRadius: '16px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ fontSize: '64px', marginBottom: '20px' }}>📊</div>
+          <div style={{ fontSize: '64px', marginBottom: '20px' }}>
+            <ChartBarIcon style={{ width: '64px', height: '64px', color: '#6b7280', strokeWidth: 1.5 }} />
+          </div>
           <h2 style={{ color: '#6b7280', marginBottom: '15px' }}>
             Няма записани емоции
           </h2>

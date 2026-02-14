@@ -1,63 +1,63 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/authMiddleware.js');
+const { ChatMessage } = require('../models'); // Импортираме модела
+const { encrypt, decrypt } = require('../utils/crypto'); // Твоят крипто модул
 const { Op } = require('sequelize');
-const sequelize = require('../../config/database');
 
 const router = express.Router();
-
 router.use(requireAuth);
 
-// Get messages between current user and another user
+// Взимане на съобщения
 router.get('/messages/:otherUserId', async (req, res) => {
   try {
     const currentUserId = req.user.id;
     const { otherUserId } = req.params;
 
-    const [messages] = await sequelize.query(
-      `SELECT id, "userId" as sender_id, "recipientId" as recipient_id, text,
-              TO_CHAR(timestamp, 'HH24:MI') as time
-       FROM "ChatMessages"
-       WHERE ("userId" = :currentUserId AND "recipientId" = :otherUserId)
-          OR ("userId" = :otherUserId AND "recipientId" = :currentUserId)
-       ORDER BY timestamp ASC`,
-      {
-        replacements: { currentUserId, otherUserId },
-        type: sequelize.QueryTypes.SELECT
-      }
-    );
+    const messages = await ChatMessage.findAll({
+      where: {
+        [Op.or]: [
+          { userId: currentUserId, recipientId: otherUserId },
+          { userId: otherUserId, recipientId: currentUserId }
+        ]
+      },
+      order: [['timestamp', 'ASC']]
+    });
 
-    res.json({ success: true, messages });
+    // Дешифриране на съобщенията преди изпращане към фронтенда
+    const decryptedMessages = messages.map(msg => ({
+      id: msg.id,
+      sender_id: msg.userId,
+      recipient_id: msg.recipientId,
+      text: decrypt(msg.textEnc), // Дешифрираме тук
+      timestamp: msg.timestamp
+    }));
+
+    res.json({ success: true, messages: decryptedMessages });
   } catch (error) {
-    console.error('Get messages error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Send message
+// Изпращане на съобщение
 router.post('/send', async (req, res) => {
   try {
     const senderId = req.user.id;
     const { recipientId, text } = req.body;
 
-    if (!text || !recipientId) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
+    if (!text) return res.status(400).json({ error: 'Text is required' });
 
-    await sequelize.query(
-      `INSERT INTO "ChatMessages" (id, "userId", "recipientId", text, timestamp, "createdAt", "updatedAt")
-       VALUES (gen_random_uuid(), :senderId, :recipientId, :text, NOW(), NOW(), NOW())`,
-      {
-        replacements: { senderId, recipientId, text },
-        type: sequelize.QueryTypes.INSERT
-      }
-    );
+    // Криптираме съобщението СЕГА
+    const encryptedText = encrypt(text);
 
-    res.json({ 
-      success: true, 
-      message: 'Message sent'
+    const newMessage = await ChatMessage.create({
+      userId: senderId,
+      recipientId: recipientId,
+      textEnc: encryptedText, // Записваме криптирания низ
+      timestamp: new Date()
     });
+
+    res.json({ success: true, messageId: newMessage.id });
   } catch (error) {
-    console.error('Send message error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

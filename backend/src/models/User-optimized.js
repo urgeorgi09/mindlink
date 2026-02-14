@@ -1,18 +1,51 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
 
-const UserSchema = new mongoose.Schema({
-  _id: { type: String, required: true },
-  role: { type: String, enum: ['user', 'therapist', 'admin'], default: 'user' },
-  auth: {
-    email: { type: String, unique: true, lowercase: true },
-    password: { type: String, select: false },
-    verified: { type: Boolean, default: false }
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  createdAt: { type: Date, default: Date.now },
-  lastActive: { type: Date, default: Date.now }
+  role: {
+    type: DataTypes.ENUM('user', 'therapist', 'admin'),
+    defaultValue: 'user'
+  },
+  // Изравнена структура (Flattened auth)
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: { isEmail: true }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+    // В Sequelize можем да скрием полето по подразбиране чрез scopes
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  lastActive: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  timestamps: true,
+  tableName: 'users',
+  defaultScope: {
+    attributes: { exclude: ['password'] } // Сигурност: Паролата не се връща при обикновени заявки
+  },
+  scopes: {
+    withPassword: { attributes: {}, } // Използва се само при логин
+  }
 });
 
-UserSchema.methods.hasPermission = function(permission) {
+/**
+ * Enterprise RBAC Логика
+ */
+User.prototype.hasPermission = function(permission) {
   const permissions = {
     user: ['read_own', 'write_own'],
     therapist: ['read_own', 'write_own', 'read_users', 'manage_sessions'],
@@ -21,4 +54,4 @@ UserSchema.methods.hasPermission = function(permission) {
   return permissions[this.role]?.includes(permission) || false;
 };
 
-export default mongoose.model('User', UserSchema);
+export default User;

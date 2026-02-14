@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUserStatus } from "../hooks/usePresence";
 import { StatusBadge } from "../components/StatusBadge";
+import { UserGroupIcon, ArrowLeftIcon, ChatBubbleLeftRightIcon, StarIcon, FaceSmileIcon, InformationCircleIcon, MagnifyingGlassIcon } from '../components/Icons';
 
 const PatientChat = () => {
   const { therapistId } = useParams();
@@ -21,6 +22,7 @@ const PatientChat = () => {
   const typingTimeoutRef = React.useRef(null);
   const messagesContainerRef = React.useRef(null);
   const prevMessagesLengthRef = React.useRef(0);
+  const isMobile = window.innerWidth < 768;
 
   // Реален онлайн статус
   const therapistStatus = useUserStatus(therapist?.id);
@@ -210,7 +212,7 @@ const PatientChat = () => {
     return (
       <div style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "50px" }}>
         <div style={{ background: "white", borderRadius: "16px", padding: "40px", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
-          <div style={{ fontSize: "64px", marginBottom: "20px" }}>👩‍⚕️</div>
+          <UserGroupIcon style={{ width: "64px", height: "64px", color: "#6b7280", strokeWidth: 1.5, marginBottom: "20px" }} />
           <h2 style={{ color: "#6b7280", marginBottom: "15px" }}>Нямате назначен терапевт</h2>
           <p style={{ color: "#9ca3af", marginBottom: "25px" }}>
             За да можете да чатите с терапевт, трябва първо да изпратите заявка и тя да бъде одобрена.
@@ -218,16 +220,20 @@ const PatientChat = () => {
           <a
             href="/therapists"
             style={{
-              display: "inline-block",
+              display: "inline-flex",
+              alignItems: "center",
               padding: "12px 24px",
-              background: "#22c55e",
+              background: "linear-gradient(135deg, #91c481 0%, #7fb570 100%)",
               color: "white",
               textDecoration: "none",
-              borderRadius: "8px",
-              fontWeight: 600,
+              borderRadius: "12px",
+              fontWeight: 700,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              transition: "all 0.2s ease",
             }}
           >
-            🔍 Намери терапевт
+            <MagnifyingGlassIcon style={{ width: "20px", height: "20px", marginRight: "8px" }} />
+            Намери терапевт
           </a>
         </div>
       </div>
@@ -235,14 +241,14 @@ const PatientChat = () => {
   }
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+    <div style={{ maxWidth: isMobile ? "100%" : "800px", margin: "0 auto", padding: isMobile ? "0" : "0 20px", height: isMobile ? "calc(100vh - 60px)" : "auto" }}>
       <div
         style={{
           background: "white",
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          borderRadius: isMobile ? "0" : "12px",
+          boxShadow: isMobile ? "none" : "0 4px 20px rgba(0,0,0,0.1)",
           overflow: "hidden",
-          height: "70vh",
+          height: isMobile ? "100%" : "70vh",
           display: "flex",
           flexDirection: "column",
         }}
@@ -250,43 +256,46 @@ const PatientChat = () => {
         {/* Хедър */}
         <div
           style={{
-            padding: "20px",
-            background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+            padding: isMobile ? "10px 12px" : "20px",
+            background: "linear-gradient(135deg, #91c481 0%, #7fb570 100%)",
             color: "white",
             position: "relative",
+            flexShrink: 0,
           }}
         >
-          <button
-            onClick={() => navigate("/patient-chat")}
-            style={{
-              position: "absolute",
-              top: "15px",
-              left: "15px",
-              background: "rgba(255,255,255,0.95)",
-              color: "#16a34a",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontSize: "15px",
-              fontWeight: 700,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateX(-3px)";
-              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateX(0)";
-              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-            }}
-          >
-            <span style={{ fontSize: "18px" }}>←</span> Назад
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => navigate("/patient-chat")}
+              style={{
+                position: "absolute",
+                top: "15px",
+                left: "15px",
+                background: "rgba(255,255,255,0.95)",
+                color: "#7fb570",
+                border: "none",
+                padding: "10px 16px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontSize: "15px",
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateX(-3px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateX(0)";
+                e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+              }}
+            >
+              <ArrowLeftIcon style={{ width: "18px", height: "18px", strokeWidth: 2.5 }} /> Назад
+            </button>
+          )}
 
           {unreadCount > 0 && (
             <div
@@ -310,22 +319,22 @@ const PatientChat = () => {
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: "15px", justifyContent: "center", paddingTop: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "15px", justifyContent: "center", paddingTop: "0" }}>
             {/* Аватар с онлайн точка */}
             <div style={{ position: "relative" }}>
               <div
                 style={{
-                  width: "50px",
-                  height: "50px",
+                  width: isMobile ? "32px" : "50px",
+                  height: isMobile ? "32px" : "50px",
                   borderRadius: "50%",
                   background: "rgba(255,255,255,0.2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "24px",
+                  fontSize: isMobile ? "16px" : "24px",
                 }}
               >
-                🩺
+                <UserGroupIcon style={{ width: isMobile ? "16px" : "24px", height: isMobile ? "16px" : "24px", strokeWidth: 2 }} />
               </div>
               {/* Онлайн точка върху аватара */}
               <div
@@ -333,10 +342,10 @@ const PatientChat = () => {
                   position: "absolute",
                   bottom: "1px",
                   right: "1px",
-                  width: "13px",
-                  height: "13px",
+                  width: isMobile ? "10px" : "13px",
+                  height: isMobile ? "10px" : "13px",
                   borderRadius: "50%",
-                  background: therapistStatus.online ? "#86efac" : "#d1d5db",
+                  background: therapistStatus.online ? "#7fb570" : "#d1d5db",
                   border: "2px solid rgba(255,255,255,0.8)",
                   transition: "background 0.4s ease",
                   animation: therapistStatus.online ? "pulse-green 2s infinite" : "none",
@@ -345,15 +354,15 @@ const PatientChat = () => {
             </div>
 
             <div>
-              <h3 style={{ margin: "0 0 4px 0" }}>{therapist.name}</h3>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ opacity: 0.85, fontSize: "14px" }}>{therapist.specialty}</span>
+              <h3 style={{ margin: "0 0 2px 0", fontSize: isMobile ? "15px" : "18px" }}>{therapist.name}</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: isMobile ? "11px" : "14px" }}>
+                <span style={{ opacity: 0.85, fontSize: isMobile ? "11px" : "14px" }}>{therapist.specialty}</span>
                 <span style={{ opacity: 0.5 }}>•</span>
                 {/* Реален статус в хедъра */}
                 {therapistStatus.loading ? (
                   <span style={{ fontSize: "13px", opacity: 0.7 }}>...</span>
                 ) : therapistStatus.online ? (
-                  <span style={{ color: "#86efac", fontSize: "13px", fontWeight: 600 }}>
+                  <span style={{ color: "#ffffff", fontSize: "13px", fontWeight: 600 }}>
                     ● онлайн
                   </span>
                 ) : (
@@ -377,11 +386,14 @@ const PatientChat = () => {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "20px",
+            overflowX: "hidden",
+            padding: isMobile ? "10px" : "20px",
             background: "#f9fafb",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
+            width: "100%",
+            maxWidth: "100%",
           }}
         >
           {messages.length === 0 && !isTyping && (
@@ -397,27 +409,34 @@ const PatientChat = () => {
               style={{
                 marginBottom: "15px",
                 display: "flex",
-                justifyContent: message.sender === "me" ? "flex-end" : "flex-start",
+                alignItems: message.sender === "me" ? "flex-end" : "flex-start",
+                flexDirection: "column",
               }}
             >
               <div
                 style={{
-                  maxWidth: "70%",
-                  padding: "12px 16px",
-                  borderRadius: "18px",
-                  background: message.sender === "me" ? "#22c55e" : "white",
+                  maxWidth: isMobile ? "85%" : "70%",
+                  padding: isMobile ? "8px 12px" : "12px 16px",
+                  borderRadius: message.sender === "me" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                  background: message.sender === "me" ? "#91c481" : "white",
                   color: message.sender === "me" ? "white" : "#374151",
                   boxShadow: message.isImportant
                     ? "0 0 0 3px #fbbf24"
                     : "0 1px 3px rgba(0,0,0,0.1)",
                   position: "relative",
+                  fontSize: isMobile ? "13px" : "16px",
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                  width: "fit-content",
                 }}
               >
                 {message.isImportant && (
-                  <div style={{ position: "absolute", top: "-8px", right: "-8px", fontSize: "20px" }}>⭐</div>
+                  <div style={{ position: "absolute", top: "-8px", right: "-8px" }}>
+                    <StarIcon style={{ width: "20px", height: "20px", color: "#fbbf24", fill: "#fbbf24" }} />
+                  </div>
                 )}
-                <p style={{ margin: "0 0 5px 0" }}>{message.text}</p>
-                <span style={{ fontSize: "12px", opacity: 0.7 }}>{message.time}</span>
+                <p style={{ margin: "0 0 4px 0" }}>{message.text}</p>
+                <span style={{ fontSize: isMobile ? "10px" : "12px", opacity: 0.7 }}>{message.time}</span>
               </div>
             </div>
           ))}
@@ -433,7 +452,8 @@ const PatientChat = () => {
                   boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
-                <span style={{ color: "#6b7280", fontSize: "14px" }}>💬 пише...</span>
+                <ChatBubbleLeftRightIcon style={{ width: "18px", height: "18px", color: "#6b7280", strokeWidth: 2, marginRight: "6px" }} />
+                <span style={{ color: "#6b7280", fontSize: "14px" }}>пише...</span>
               </div>
             </div>
           )}
@@ -441,7 +461,7 @@ const PatientChat = () => {
         </div>
 
         {/* Поле за писане */}
-        <div style={{ padding: "20px", borderTop: "1px solid #e5e7eb", background: "white" }}>
+        <div style={{ padding: isMobile ? "10px 12px" : "20px", borderTop: "1px solid #e5e7eb", background: "white", flexShrink: 0 }}>
           {showEmojiPicker && (
             <div
               style={{
@@ -466,41 +486,61 @@ const PatientChat = () => {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              style={{ padding: "12px", background: "#f3f4f6", border: "none", borderRadius: "25px", cursor: "pointer", fontSize: "20px" }}
-            >
-              😊
-            </button>
+          <div style={{ display: "flex", gap: isMobile ? "6px" : "10px" }}>
+            {!isMobile && (
+              <button
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                style={{ padding: "12px", background: "#f3f4f6", border: "none", borderRadius: "25px", cursor: "pointer", fontSize: "20px" }}
+              >
+                <FaceSmileIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+              </button>
+            )}
             <input
               type="text"
               value={newMessage}
               onChange={handleTyping}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Напишете съобщение..."
-              style={{ flex: 1, padding: "12px 16px", border: "1px solid #d1d5db", borderRadius: "25px", fontSize: "16px", outline: "none" }}
+              style={{ flex: 1, padding: isMobile ? "8px 12px" : "12px 16px", border: "1px solid #d1d5db", borderRadius: "25px", fontSize: isMobile ? "13px" : "16px", outline: "none" }}
             />
             <button
               onClick={sendMessage}
               disabled={!newMessage.trim()}
               style={{
-                padding: "12px 24px",
-                background: newMessage.trim() ? "#22c55e" : "#9ca3af",
-                color: "white",
+                padding: isMobile ? "8px 14px" : "10px 16px",
+                background: newMessage.trim() ? "rgba(255,255,255,0.95)" : "#9ca3af",
+                color: newMessage.trim() ? "#7fb570" : "white",
                 border: "none",
-                borderRadius: "25px",
+                borderRadius: "12px",
                 cursor: newMessage.trim() ? "pointer" : "not-allowed",
-                fontSize: "16px",
+                fontSize: isMobile ? "13px" : "15px",
+                fontWeight: 700,
+                boxShadow: newMessage.trim() ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (newMessage.trim() && !isMobile) {
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (newMessage.trim() && !isMobile) {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+                }
               }}
             >
-              Изпрати
+              {isMobile ? "➤" : "Изпрати"}
             </button>
           </div>
 
-          <div style={{ marginTop: "10px", fontSize: "12px", color: "#6b7280", textAlign: "center" }}>
-            💡 Споделете свободно мислите и чувствата си
-          </div>
+          {!isMobile && (
+            <div style={{ marginTop: "8px", fontSize: "11px", color: "#6b7280", textAlign: "center" }}>
+              <InformationCircleIcon style={{ width: "14px", height: "14px", color: "#6b7280", strokeWidth: 2, marginRight: "4px" }} />
+              Споделете свободно мислите и чувствата си
+            </div>
+          )}
         </div>
       </div>
     </div>

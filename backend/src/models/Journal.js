@@ -1,43 +1,53 @@
-// models/Journal.js
-import mongoose from "mongoose";
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/database.js';
 
-const JournalSchema = new mongoose.Schema({
-  userId: {
-    type: String,  // ✅ String за UUID
-    required: true,
-    index: true
+const Journal = sequelize.define('Journal', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    index: true // Бързо филтриране по потребител
+  },
+  // Криптирани данни - TEXT тип за неограничена дължина на записа
   promptEnc: {
-    type: String,  // ✅ Криптиран prompt
-    default: null
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   textEnc: {
-    type: String,  // ✅ Криптирано съдържание
-    required: true
+    type: DataTypes.TEXT,
+    allowNull: false
   },
-  tags: [{
-    type: String,
-    trim: true
-  }],
-  isPrivate: { 
-    type: Boolean, 
-    default: true 
+  // Postgres специфичен тип за тагове
+  tags: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  isPrivate: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
   wordCount: {
-    type: Number,
-    default: 0
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'journals',
+  indexes: [
+    // Композитен индекс за бързо зареждане на последните записи на потребителя
+    {
+      name: 'idx_user_journals_date',
+      fields: ['userId', 'createdAt']
+    }
+  ]
 });
-
-// Index за бързо търсене
-JournalSchema.index({ userId: 1, createdAt: -1 });
-
-const Journal = mongoose.model("Journal", JournalSchema);
 
 export default Journal;

@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { useToast } from "../context/ToastContext";
 
 const AdminDashboard = () => {
+  const toast = useToast();
   const [therapists, setTherapists] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('therapists');
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalUsers: 0, totalTherapists: 0, pendingVerifications: 0 });
 
   useEffect(() => {
     fetchTherapists();
     fetchAllUsers();
+    calculateStats();
   }, []);
 
   const fetchTherapists = async () => {
@@ -34,9 +38,63 @@ const AdminDashboard = () => {
       });
       const data = await response.json();
       setAllUsers(data.users || []);
+      calculateStats(data.users || []);
     } catch (error) {
       console.error("Error:", error);
     }
+  };
+
+  const calculateStats = (users = allUsers) => {
+    const totalUsers = users.filter(u => u.role === 'user').length;
+    const totalTherapists = users.filter(u => u.role === 'therapist' && u.verified).length;
+    const pendingVerifications = users.filter(u => u.role === 'therapist' && !u.verified).length;
+    setStats({ totalUsers, totalTherapists, pendingVerifications });
+  };
+
+  const deleteUser = async (userId, userName) => {
+    toast.confirm(`Сигурни ли сте, че искате да изтриете акаунта на ${userName}?`, async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          toast.success("Акаунтът е изтрит успешно!");
+          fetchAllUsers();
+        } else {
+          toast.error("Грешка при изтриване на акаунта");
+        }
+      } catch (error) {
+        toast.error("Грешка при изтриване на акаунта");
+      }
+    });
+  };
+
+  const changeUserRole = async (userId, newRole, userName) => {
+    toast.confirm(`Промяна на ролята на ${userName} на ${newRole}?`, async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`/api/admin/users/${userId}/role`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ role: newRole }),
+        });
+
+        if (response.ok) {
+          toast.success("Ролята е променена успешно!");
+          fetchAllUsers();
+        } else {
+          toast.error("Грешка при промяна на ролята");
+        }
+      } catch (error) {
+        toast.error("Грешка при промяна на ролята");
+      }
+    });
   };
 
   const verifyTherapist = async (therapistId) => {
@@ -52,12 +110,14 @@ const AdminDashboard = () => {
       });
 
       if (response.ok) {
-        alert("Терапевтът е верифициран успешно!");
+        toast.success("Терапевтът е верифициран успешно!");
         fetchTherapists();
         fetchAllUsers();
+      } else {
+        toast.error("Грешка при верификация");
       }
     } catch (error) {
-      alert("Грешка при верификация");
+      toast.error("Грешка при верификация");
     }
   };
 
@@ -82,9 +142,30 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ fontSize: "32px", marginBottom: "30px" }}>
+      <h1 style={{ fontSize: "32px", marginBottom: "10px" }}>
         ⚙️ Админ Панел
       </h1>
+      <p style={{ color: "#6b7280", marginBottom: "30px" }}>Управление на потребители и система</p>
+
+      {/* Статистики */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalUsers}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>👤 Потребители</div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalTherapists}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>🩺 Терапевти</div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.pendingVerifications}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>⏳ Чакат верификация</div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{allUsers.length}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>📊 Общо акаунти</div>
+        </div>
+      </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         <button
@@ -206,7 +287,7 @@ const AdminDashboard = () => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <h3 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>
                           {user.name}
                         </h3>
@@ -227,17 +308,55 @@ const AdminDashboard = () => {
                           Регистриран: {new Date(user.created_at).toLocaleDateString("bg-BG")}
                         </p>
                       </div>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: badge.color + '20',
-                        color: badge.color,
-                        border: `1px solid ${badge.color}40`
-                      }}>
-                        {badge.emoji} {badge.text}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          background: badge.color + '20',
+                          color: badge.color,
+                          border: `1px solid ${badge.color}40`
+                        }}>
+                          {badge.emoji} {badge.text}
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {user.role !== 'admin' && (
+                            <>
+                              <button
+                                onClick={() => changeUserRole(user.id, user.role === 'therapist' ? 'user' : 'therapist', user.name)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#3b82f6',
+                                  color: 'white',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600'
+                                }}
+                              >
+                                🔄 Промени роля
+                              </button>
+                              <button
+                                onClick={() => deleteUser(user.id, user.name)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600'
+                                }}
+                              >
+                                🗑️ Изтрий
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

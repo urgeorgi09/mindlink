@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { BookOpenIcon, PencilIcon, MagnifyingGlassIcon, CheckCircleIcon, HeartIcon, StarIcon, ChatBubbleLeftRightIcon, DocumentTextIcon } from '../components/Icons';
 
 const Journal = () => {
   const [entries, setEntries] = useState([]);
@@ -8,36 +9,77 @@ const Journal = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const categories = [
-    { value: "personal", label: "Личен", emoji: "📝", color: "#3b82f6" },
-    { value: "gratitude", label: "Благодарност", emoji: "🙏", color: "#10b981" },
-    { value: "goals", label: "Цели", emoji: "🎯", color: "#8b5cf6" },
-    { value: "reflection", label: "Размисли", emoji: "🤔", color: "#f59e0b" },
+    { value: "personal", label: "Личен", icon: PencilIcon, color: "#91c481" },
+    { value: "gratitude", label: "Благодарност", icon: HeartIcon, color: "#7fb570" },
+    { value: "goals", label: "Цели", icon: StarIcon, color: "#6da65f" },
+    { value: "reflection", label: "Размисли", icon: ChatBubbleLeftRightIcon, color: "#569b5c" },
   ];
 
   useEffect(() => {
-    const saved = localStorage.getItem("journalEntries");
-    if (saved) setEntries(JSON.parse(saved));
+    fetchEntries();
   }, []);
 
-  const handleSubmit = (e) => {
+  const fetchEntries = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Decode JWT to see user ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log("🔑 Current user ID:", payload.id);
+      
+      console.log("📖 Fetching journal entries...");
+      const response = await fetch("/api/journal/entries", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("📖 Response status:", response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📖 Entries loaded:", data);
+        console.log("📖 Entries array:", data.entries);
+        console.log("📖 Entries length:", data.entries?.length);
+        setEntries(data.entries || []);
+      } else {
+        console.error("📖 Failed to load entries:", response.statusText);
+      }
+    } catch (error) {
+      console.error("📖 Error fetching entries:", error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !currentEntry.trim()) return;
 
-    const entry = {
-      id: Date.now(),
-      title: title.trim(),
-      content: currentEntry.trim(),
-      category,
-      date: new Date().toISOString(),
-      wordCount: currentEntry.trim().split(/\s+/).length,
-    };
+    try {
+      const token = localStorage.getItem("token");
+      console.log("✍️ Saving journal entry:", { title, category, contentLength: currentEntry.length });
+      const response = await fetch("/api/journal/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: currentEntry.trim(),
+          category,
+        }),
+      });
 
-    const newEntries = [entry, ...entries];
-    setEntries(newEntries);
-    localStorage.setItem("journalEntries", JSON.stringify(newEntries));
-
-    setTitle("");
-    setCurrentEntry("");
+      console.log("✍️ Save response status:", response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✍️ Save response:", data);
+        setTitle("");
+        setCurrentEntry("");
+        fetchEntries();
+      } else {
+        const error = await response.json();
+        console.error("✍️ Failed to save:", error);
+      }
+    } catch (error) {
+      console.error("✍️ Error creating entry:", error);
+    }
   };
 
   const filteredEntries = entries.filter(
@@ -50,8 +92,9 @@ const Journal = () => {
 
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ textAlign: "center", color: "#2d3748", marginBottom: "30px" }}>
-        📖 Личен дневник
+      <h1 style={{ textAlign: "center", color: "#2d3748", marginBottom: "30px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+        <BookOpenIcon style={{ width: "32px", height: "32px", strokeWidth: 2 }} />
+        Личен дневник
       </h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>
@@ -64,7 +107,10 @@ const Journal = () => {
             boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
           }}
         >
-          <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>✍️ Нов запис</h2>
+          <h2 style={{ marginBottom: "20px", color: "#2d3748", display: "flex", alignItems: "center", gap: "8px" }}>
+            <PencilIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />
+            Нов запис
+          </h2>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: "20px" }}>
@@ -99,11 +145,14 @@ const Journal = () => {
                   boxSizing: "border-box",
                 }}
               >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.emoji} {cat.label}
-                  </option>
-                ))}
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  return (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -132,7 +181,7 @@ const Journal = () => {
             <button
               type="submit"
               style={{
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                background: "linear-gradient(135deg, #569b5c 0%, #4a8751 100%)",
                 color: "white",
                 border: "none",
                 padding: "12px 30px",
@@ -141,9 +190,14 @@ const Journal = () => {
                 fontWeight: "600",
                 cursor: "pointer",
                 width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
               }}
             >
-              💾 Запази запис
+              <CheckCircleIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+              Запиши
             </button>
           </form>
         </div>
@@ -155,28 +209,38 @@ const Journal = () => {
             padding: "30px",
             borderRadius: "16px",
             boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: "600px",
           }}
         >
-          <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>📚 Мои записи</h2>
+          <h2 style={{ marginBottom: "20px", color: "#2d3748", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            <DocumentTextIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />
+            Мои записи
+          </h2>
 
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "20px", flexShrink: 0 }}>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="🔍 Търсене в записите..."
+              placeholder="Търсене в записите..."
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "12px 12px 12px 40px",
                 border: "2px solid #e2e8f0",
                 borderRadius: "8px",
                 fontSize: "16px",
                 boxSizing: "border-box",
+                backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%236b7280"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>')`,
+                backgroundSize: "20px 20px",
+                backgroundPosition: "12px center",
+                backgroundRepeat: "no-repeat",
               }}
             />
           </div>
 
-          <div style={{ maxHeight: "500px", overflowY: "auto" }}>
+          <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
             {filteredEntries.length === 0 ? (
               <p style={{ textAlign: "center", color: "#718096" }}>
                 {searchTerm ? "Няма намерени записи." : "Все още няма записи. Напишете първия си!"}
@@ -207,7 +271,7 @@ const Journal = () => {
                         {entry.title}
                       </h3>
                       <span style={{ fontSize: "12px", color: "#718096" }}>
-                        {new Date(entry.date).toLocaleDateString("bg-BG")}
+                        {new Date(entry.createdAt || entry.date).toLocaleDateString("bg-BG")}
                       </span>
                     </div>
 
@@ -227,9 +291,13 @@ const Journal = () => {
                           borderRadius: "12px",
                           fontSize: "12px",
                           fontWeight: "600",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
                         }}
                       >
-                        {catInfo.emoji} {catInfo.label}
+                        {React.createElement(catInfo.icon, { style: { width: "14px", height: "14px", strokeWidth: 2 } })}
+                        {catInfo.label}
                       </span>
                       <span style={{ fontSize: "12px", color: "#718096" }}>
                         {entry.wordCount} думи

@@ -83,7 +83,7 @@ export const useBatchStatus = (userIds) => {
     };
 
     checkStatuses();
-    const interval = setInterval(checkStatuses, 10000); // Проверка на всеки 10 сек
+    const interval = setInterval(checkStatuses, 2000); // Проверка на всеки 2 сек
     return () => clearInterval(interval);
   }, [JSON.stringify(userIds)]); // Dependency на JSON string за да work-ва с масиви
 

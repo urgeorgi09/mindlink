@@ -1,6 +1,10 @@
-/* Dark Mode Global Styles */
-html,
+/* Dark Mode Global Styles */html {
+  overflow-y: scroll; /* Винаги показва вертикален скролбар */
+  scrollbar-gutter: stable; /* Модерен подход - резервира място */
+}
+
 body {
+  overflow-x: hidden; /* Предотвратява хоризонтален скрол */
   margin: 0;
   padding: 0;
   width: 100%;
@@ -11,14 +15,28 @@ body {
 body.dark-mode {
   background-color: #0f172a !important;
   color: #f1f5f9 !important;
-  transition: all 0.3s ease;
   min-height: 100vh;
   width: 100vw;
 }
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
 
+*, *::before, *::after {
+  box-sizing: border-box !important;
+}
+
+/* Премахва всички възможни padding-и */
 #root {
-  min-height: 100vh;
-  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 body.dark-mode #root {
@@ -28,10 +46,7 @@ body.dark-mode #root {
 }
 
 body.dark-mode * {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    border-color 0.3s ease;
+  /* Removed transitions */
 }
 
 /* Dark mode for common elements */
@@ -50,18 +65,36 @@ body.dark-mode textarea::placeholder {
 
 /* Dark mode for cards and containers */
 body.dark-mode [style*="background: white"],
-body.dark-mode [style*="background-color: white"] {
+body.dark-mode [style*="background-color: white"],
+body.dark-mode [style*="background: #ffffff"],
+body.dark-mode [style*="background:#ffffff"],
+body.dark-mode [style*="backgroundColor: white"],
+body.dark-mode [style*="backgroundColor:#ffffff"] {
   background: #1e293b !important;
-  color: #f1f5f9 !important;
+  background-color: #1e293b !important;
 }
 
-body.dark-mode [style*="background: #ffffff"] {
+/* Всички картички и контейнери */
+body.dark-mode div[style*="background"],
+body.dark-mode section[style*="background"],
+body.dark-mode article[style*="background"] {
+  background-color: #1e293b !important;
+}
+
+/* Специфични картички */
+body.dark-mode [style*="borderRadius"][style*="background"],
+body.dark-mode [style*="border-radius"][style*="background"] {
   background: #1e293b !important;
+  background-color: #1e293b !important;
 }
 
 /* Dark mode for borders */
 body.dark-mode [style*="border: 1px solid #e2e8f0"],
-body.dark-mode [style*="border-color: #e2e8f0"] {
+body.dark-mode [style*="border: 2px solid #e2e8f0"],
+body.dark-mode [style*="border-color: #e2e8f0"],
+body.dark-mode [style*="borderColor: #e2e8f0"],
+body.dark-mode [style*="border:1px solid #e2e8f0"],
+body.dark-mode [style*="border:2px solid #e2e8f0"] {
   border-color: #334155 !important;
 }
 
@@ -76,6 +109,30 @@ body.dark-mode [style*="color: #718096"] {
 
 body.dark-mode [style*="color: #4a5568"] {
   color: #e2e8f0 !important;
+}
+
+body.dark-mode [style*="color: #1e293b"] {
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode [style*="color: #64748b"] {
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode [style*="color: #334155"] {
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div {
+  color: inherit;
 }
 
 /* Dark mode for shadows */

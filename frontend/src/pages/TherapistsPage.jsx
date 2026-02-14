@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import TherapistProfile from "../components/TherapistProfile";
+import { UserGroupIcon, CheckCircleIcon, CalendarIcon, StarIcon, ChatBubbleLeftRightIcon } from '../components/Icons';
 
 const TherapistsPage = () => {
   const [therapists, setTherapists] = useState([]);
@@ -76,7 +77,7 @@ const TherapistsPage = () => {
     `;
 
     popup.innerHTML = `
-      <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+      <div style="font-size: 48px; margin-bottom: 15px;"><CheckCircleIcon style={{ width: '48px', height: '48px', color: '#22c55e', strokeWidth: 2 }} /></div>
       <h3 style="margin: 0 0 10px 0; color: #22c55e;">Успешно!</h3>
       <p style="margin: 0; color: #6b7280;">${message}</p>
     `;
@@ -112,7 +113,10 @@ const TherapistsPage = () => {
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: "40px" }}>
-        <h1 style={{ color: "#22c55e", marginBottom: "10px" }}>🩺 Нашите терапевти</h1>
+        <h1 style={{ background: "linear-gradient(135deg, #91c481 0%, #7fb570 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <UserGroupIcon style={{ width: "32px", height: "32px", strokeWidth: 2, color: "#91c481" }} />
+          Нашите терапевти
+        </h1>
         <p style={{ color: "#6b7280", fontSize: "18px" }}>
           Намерете подходящия специалист за вашите нужди
         </p>
@@ -143,8 +147,8 @@ const TherapistsPage = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-          gap: "25px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "20px",
         }}
       >
         {filteredTherapists.map((therapist) => (
@@ -153,7 +157,7 @@ const TherapistsPage = () => {
             style={{
               background: "white",
               borderRadius: "16px",
-              padding: "25px",
+              padding: "20px",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
               border: "1px solid #e5e7eb",
               transition: "transform 0.2s, box-shadow 0.2s",
@@ -168,12 +172,12 @@ const TherapistsPage = () => {
             }}
           >
             {/* Хедър */}
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
-              <div style={{ position: "relative", marginRight: "15px" }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+              <div style={{ position: "relative", marginRight: "12px" }}>
                 <div
                   style={{
-                    width: "60px",
-                    height: "60px",
+                    width: "50px",
+                    height: "50px",
                     borderRadius: "50%",
                     background: therapist.profileImage
                       ? `url(${therapist.profileImage})`
@@ -183,10 +187,10 @@ const TherapistsPage = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: therapist.profileImage ? "0" : "30px",
+                    fontSize: therapist.profileImage ? "0" : "24px",
                   }}
                 >
-                  {!therapist.profileImage && "🩺"}
+                  {!therapist.profileImage && <UserGroupIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />}
                   {therapist.profileImage && (
                     <div
                       style={{
@@ -205,7 +209,7 @@ const TherapistsPage = () => {
                         border: "2px solid white",
                       }}
                     >
-                      🩺
+                      <UserGroupIcon style={{ width: "12px", height: "12px", strokeWidth: 2.5, color: "white" }} />
                     </div>
                   )}
                 </div>
@@ -222,7 +226,7 @@ const TherapistsPage = () => {
                 >
                   {therapist.name}
                 </h3>
-                <p style={{ margin: "0", color: "#22c55e", fontWeight: 600 }}>
+                <p style={{ margin: "0", color: "#7fb570", fontWeight: 600 }}>
                   {therapist.specialty}
                 </p>
               </div>
@@ -241,45 +245,54 @@ const TherapistsPage = () => {
             </div>
 
             {/* Информация */}
-            <div style={{ marginBottom: "15px" }}>
-              <p style={{ margin: "0 0 8px 0", color: "#6b7280" }}>📅 {therapist.experience}</p>
-              <p style={{ margin: "0 0 8px 0", color: "#6b7280" }}>
-                ⭐ {therapist.rating}/5.0 рейтинг
+            <div style={{ marginBottom: "12px" }}>
+              <p style={{ margin: "0 0 6px 0", color: "#6b7280", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <CalendarIcon style={{ width: "16px", height: "16px", strokeWidth: 2 }} />
+                {therapist.experience}
               </p>
-              <p style={{ margin: "0 0 15px 0", color: "#6b7280" }}>💰 {therapist.price}</p>
+              <p style={{ margin: "0 0 6px 0", color: "#6b7280", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <StarIcon style={{ width: "16px", height: "16px", strokeWidth: 2, fill: "#fbbf24", color: "#fbbf24" }} />
+                {therapist.rating}/5.0
+              </p>
+              <p style={{ margin: "0 0 12px 0", color: "#6b7280", fontSize: "14px" }}>💰 {therapist.price}</p>
             </div>
 
             {/* Бутони */}
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
               <button
                 onClick={() => bookAppointment(therapist)}
                 disabled={!therapist.available}
                 style={{
                   flex: 1,
-                  padding: "12px",
-                  background: therapist.available ? "#22c55e" : "#9ca3af",
+                  padding: "10px",
+                  background: therapist.available ? "linear-gradient(135deg, #91c481 0%, #7fb570 100%)" : "#9ca3af",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   cursor: therapist.available ? "pointer" : "not-allowed",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: 600,
                 }}
               >
-                {therapist.available ? "📅 Запиши час" : "Недостъпен"}
+                {therapist.available ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <CalendarIcon style={{ width: "16px", height: "16px", strokeWidth: 2 }} />
+                    Запиши
+                  </span>
+                ) : "Недостъпен"}
               </button>
               <button
                 style={{
-                  padding: "12px 16px",
+                  padding: "10px 14px",
                   background: "transparent",
-                  color: "#22c55e",
-                  border: "2px solid #22c55e",
+                  color: "#7fb570",
+                  border: "2px solid #7fb570",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  fontSize: "16px",
+                  fontSize: "14px",
                 }}
               >
-                💬 Чат
+                <ChatBubbleLeftRightIcon style={{ width: "18px", height: "18px", strokeWidth: 2 }} />
               </button>
             </div>
           </div>

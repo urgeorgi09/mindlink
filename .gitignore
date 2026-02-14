@@ -1,1 +1,17 @@
 node_modules
+
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Secrets
+*.pem
+*.key
+secrets.txt
+
+# Backups
+backups/
+*.sql

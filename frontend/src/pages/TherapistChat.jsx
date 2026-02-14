@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { ChatBubbleLeftRightIcon, ChartBarIcon, PencilSquareIcon, UserGroupIcon, FaceSmileIcon, StarIcon, ArrowLeftIcon } from '../components/Icons';
 
 const TherapistChat = () => {
   const { colors } = useTheme();
@@ -11,20 +12,10 @@ const TherapistChat = () => {
   const [activeTab, setActiveTab] = useState("patients");
   const [isTyping, setIsTyping] = useState({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const messagesEndRef = React.useRef(null);
   const typingTimeoutRef = React.useRef(null);
 
   const emojis = ["😊", "😢", "😰", "😡", "❤️", "👍", "🙏", "💪", "🌟", "✨"];
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
   
-  useEffect(() => {
-    
-    scrollToBottom();
-  }, [messages, selectedPatient]);
-
   useEffect(() => {
     fetchRequests();
     fetchPatients();
@@ -177,8 +168,6 @@ const TherapistChat = () => {
         ...prev,
         [patientId]: formattedMessages,
       }));
-      // Ensure scroll to bottom after messages update
-      setTimeout(() => scrollToBottom(), 50);
       
       // Check typing status
       if (data.isTyping !== undefined) {
@@ -220,17 +209,26 @@ const TherapistChat = () => {
   };
 
   return (
-    <div style={{ display: "flex", height: "80vh", maxWidth: "1200px", margin: "0 auto" }}>
-      {/* Списък с пациенти */}
+    <div style={{ display: "flex", flexDirection: window.innerWidth < 768 ? "column" : "row", height: "80vh", maxWidth: "1400px", margin: "0 auto", gap: "0" }}>
+      {/* Списък з пациенти */}
       <div
         style={{
-          width: "300px",
-          borderRight: `1px solid ${colors.border}`,
+          width: window.innerWidth < 768 ? "100%" : "320px",
+          minWidth: window.innerWidth < 768 ? "auto" : "320px",
+          height: window.innerWidth < 768 ? (selectedPatient ? "0" : "100%") : "100%",
+          overflow: window.innerWidth < 768 && selectedPatient ? "hidden" : "visible",
+          borderRight: window.innerWidth < 768 ? "none" : `1px solid ${colors.border}`,
+          borderBottom: window.innerWidth < 768 ? `1px solid ${colors.border}` : "none",
           background: colors.surface,
+          display: window.innerWidth < 768 && selectedPatient ? "none" : "flex",
+          flexDirection: "column",
         }}
       >
         <div style={{ padding: "20px", borderBottom: `1px solid ${colors.border}` }}>
-          <h2 style={{ margin: "0 0 15px 0", color: colors.primary }}>💬 Пациенти</h2>
+          <h2 style={{ margin: "0 0 15px 0", color: colors.primary, display: "flex", alignItems: "center", gap: "8px" }}>
+            <ChatBubbleLeftRightIcon style={{ width: "24px", height: "24px", strokeWidth: 2 }} />
+            Пациенти
+          </h2>
 
           {/* Табове */}
           <div style={{ display: "flex", gap: "5px" }}>
@@ -325,7 +323,8 @@ const TherapistChat = () => {
                         cursor: "pointer",
                       }}
                     >
-                      📊 Емоции
+                      <ChartBarIcon style={{ width: "14px", height: "14px", strokeWidth: 2, marginRight: "4px", display: "inline" }} />
+                      Емоции
                     </button>
                     {patient.unread > 0 && (
                       <span
@@ -365,8 +364,9 @@ const TherapistChat = () => {
                   background: `${colors.warning}20`,
                 }}
               >
-                <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: colors.warning }}>
-                  📝 {request.name}
+                <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: colors.warning, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <PencilSquareIcon style={{ width: "16px", height: "16px", strokeWidth: 2 }} />
+                  {request.name}
                 </h4>
                 <p style={{ margin: "0", color: colors.textSecondary, fontSize: "14px" }}>
                   Нова заявка за терапия
@@ -415,18 +415,39 @@ const TherapistChat = () => {
       </div>
 
       {/* Чат прозорец */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {selectedPatient ? (
           <>
             {/* Хедър */}
             <div
               style={{
-                padding: "20px",
+                padding: "15px 20px",
                 borderBottom: `1px solid ${colors.border}`,
                 background: colors.surface,
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
               }}
             >
-              <h3 style={{ margin: 0, color: colors.primary }}>🩺 {selectedPatient.name}</h3>
+              {window.innerWidth < 768 && (
+                <button
+                  onClick={() => setSelectedPatient(null)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    fontSize: "24px",
+                    cursor: "pointer",
+                    padding: "0",
+                    color: colors.text,
+                  }}
+                >
+                  <ArrowLeftIcon style={{ width: "20px", height: "20px", strokeWidth: 2.5 }} />
+                </button>
+              )}
+              <h3 style={{ margin: 0, color: colors.primary, fontSize: "clamp(16px, 4vw, 20px)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <UserGroupIcon style={{ width: "20px", height: "20px", strokeWidth: 2 }} />
+                {selectedPatient.name}
+              </h3>
             </div>
 
             {/* Съобщения */}
@@ -449,15 +470,16 @@ const TherapistChat = () => {
                 >
                   <div
                     style={{
-                      maxWidth: "70%",
+                      maxWidth: "75%",
                       padding: "12px 16px",
                       borderRadius: "18px",
-                      background: message.sender === "therapist" ? colors.primary : colors.surface,
+                      background: message.sender === "therapist" ? "linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)" : colors.surface,
                       color: message.sender === "therapist" ? "white" : colors.text,
                       boxShadow: message.isImportant 
                         ? "0 0 0 3px #fbbf24" 
-                        : "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        : "0 2px 8px rgba(0, 0, 0, 0.1)",
                       position: "relative",
+                      wordBreak: "break-word",
                     }}
                   >
                     {message.isImportant && (
@@ -469,7 +491,7 @@ const TherapistChat = () => {
                           fontSize: "20px",
                         }}
                       >
-                        ⭐
+                      <StarIcon style={{ width: "20px", height: "20px", fill: "#fbbf24", color: "#fbbf24" }} />
                       </div>
                     )}
                     <p style={{ margin: "0 0 5px 0" }}>{message.text}</p>
@@ -501,19 +523,17 @@ const TherapistChat = () => {
                       boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                     }}
                   >
-                    <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                      💬 пише...
-                    </span>
+                    <ChatBubbleLeftRightIcon style={{ width: "16px", height: "16px", strokeWidth: 2, marginRight: "6px", display: "inline" }} />
+                    <span style={{ color: "#6b7280", fontSize: "14px" }}>пише...</span>
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Поле за писане */}
             <div
               style={{
-                padding: "20px",
+                padding: window.innerWidth < 768 ? "12px" : "20px",
                 borderTop: `1px solid ${colors.border}`,
                 background: colors.surface,
               }}
@@ -550,50 +570,57 @@ const TherapistChat = () => {
                   ))}
                 </div>
               )}
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: window.innerWidth < 768 ? "6px" : "10px", alignItems: "center" }}>
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   style={{
-                    padding: "12px",
+                    padding: window.innerWidth < 768 ? "10px" : "12px",
                     background: colors.background,
                     border: `1px solid ${colors.border}`,
-                    borderRadius: "25px",
+                    borderRadius: "50%",
                     cursor: "pointer",
-                    fontSize: "20px",
+                    fontSize: window.innerWidth < 768 ? "18px" : "20px",
+                    minWidth: window.innerWidth < 768 ? "40px" : "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  😊
+                  <FaceSmileIcon style={{ width: window.innerWidth < 768 ? "18px" : "20px", height: window.innerWidth < 768 ? "18px" : "20px", strokeWidth: 2 }} />
                 </button>
                 <input
                   type="text"
                   value={newMessage}
                   onChange={handleTyping}
                   onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Напишете съобщение..."
+                  placeholder="Съобщение..."
                   style={{
                     flex: 1,
-                    padding: "12px 16px",
+                    padding: window.innerWidth < 768 ? "10px 14px" : "12px 16px",
                     border: `1px solid ${colors.border}`,
                     borderRadius: "25px",
-                    fontSize: "16px",
+                    fontSize: window.innerWidth < 768 ? "14px" : "16px",
                     outline: "none",
                     background: colors.background,
                     color: colors.text,
+                    minWidth: 0,
                   }}
                 />
                 <button
                   onClick={sendMessage}
                   style={{
-                    padding: "12px 24px",
+                    padding: window.innerWidth < 768 ? "10px 16px" : "12px 24px",
                     background: colors.primary,
                     color: "white",
                     border: "none",
                     borderRadius: "25px",
                     cursor: "pointer",
-                    fontSize: "16px",
+                    fontSize: window.innerWidth < 768 ? "14px" : "16px",
+                    fontWeight: "600",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  Изпрати
+                  {window.innerWidth < 768 ? "➤" : "Изпрати"}
                 </button>
               </div>
             </div>
