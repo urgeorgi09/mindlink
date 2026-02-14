@@ -13,6 +13,7 @@ export const useAnonymous = () => {
 export const AnonymousProvider = ({ children }) => {
   const [userRole, setUserRole] = useState("user");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
 
   const normalizeRole = (role) => {
     const lower = typeof role === "string" ? role.toLowerCase() : "user";
@@ -26,17 +27,20 @@ export const AnonymousProvider = ({ children }) => {
 
   const syncFromStorage = () => {
     const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-    if (token && user) {
+    const userStr = localStorage.getItem("user");
+    if (token && userStr) {
       setIsAuthenticated(true);
       try {
-        const userData = JSON.parse(user);
+        const userData = JSON.parse(userStr);
+        setUser(userData);
         setUserRole(normalizeRole(userData.role || "user"));
       } catch (e) {
+        setUser(null);
         setUserRole("user");
       }
     } else {
       setIsAuthenticated(false);
+      setUser(null);
       setUserRole("user");
     }
   };
@@ -67,8 +71,8 @@ export const AnonymousProvider = ({ children }) => {
 
     // Fallback to storage in case state is stale
     const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-    if (!isAuthenticated && !(token && user)) return false;
+    const userStr = localStorage.getItem("user");
+    if (!isAuthenticated && !(token && userStr)) return false;
 
     return roleHierarchy[currentRole] >= roleHierarchy[required];
   };
@@ -77,6 +81,7 @@ export const AnonymousProvider = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
     setIsAuthenticated(true);
+    setUser(userData);
     setUserRole(normalizeRole(userData.role || "user"));
   };
 
@@ -84,10 +89,12 @@ export const AnonymousProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsAuthenticated(false);
+    setUser(null);
     setUserRole("user");
   };
 
   const value = {
+    user,
     userRole,
     isAuthenticated,
     canAccess,

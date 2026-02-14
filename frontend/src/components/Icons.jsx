@@ -37,7 +37,9 @@ import {
   Bars3Icon,
   CameraIcon,
   BoltIcon,
-  FaceFrownIcon
+  FaceFrownIcon,
+  SparklesIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 export {
@@ -79,5 +81,7 @@ export {
   Bars3Icon,
   CameraIcon,
   BoltIcon,
-  FaceFrownIcon
+  FaceFrownIcon,
+  SparklesIcon,
+  ShieldCheckIcon
 };
