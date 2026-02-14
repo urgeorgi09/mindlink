@@ -27,7 +27,6 @@ import { ToastProvider } from "./context/ToastContext";
 import { usePresence } from "./hooks/usePresence";
 import './styles/presence.css';
 
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
