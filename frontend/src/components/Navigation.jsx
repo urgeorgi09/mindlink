@@ -49,6 +49,10 @@ const PatientChat = () => {
   const checkTherapist = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       
       // Get current user ID first
       const userResponse = await fetch('/api/auth/me', {
