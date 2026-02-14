@@ -22,6 +22,10 @@ const Dashboard = () => {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       const response = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
