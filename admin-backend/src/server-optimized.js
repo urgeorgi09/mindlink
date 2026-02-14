@@ -14,9 +14,6 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(express.json({ limit: '10mb' }));
 
-const presenceRouter = require("../../frontend/src/presence.js");
-app.use("/api/presence", presenceRouter);
-
 // Routes
 app.use('/api/auth', authRoutes);
 
