@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes-optimized.js';
 
 dotenv.config();
@@ -20,15 +19,10 @@ app.use('/api/auth', authRoutes);
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB error:', err));
-
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Admin server running on port ${PORT}`);
 });
 
 export default app;
