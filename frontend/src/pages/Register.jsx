@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAnonymous } from "../context/AnonymousContext";
+import { PencilSquareIcon, UserIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -52,7 +53,7 @@ const Register = () => {
           email: formData.email,
           password: formData.password,
           role: formData.role,
-          specialty: formData.specialty,
+          ...(formData.role === 'therapist' && formData.specialty ? { specialty: formData.specialty } : {}),
         }),
       });
 
@@ -60,11 +61,8 @@ const Register = () => {
 
       if (response.ok) {
         login(data.user, data.token);
-        if (formData.role === 'therapist') {
-          navigate('/therapist-verification');
-        } else {
-          navigate('/');
-        }
+        navigate("/");
+        window.location.reload();
       } else {
         // Show specific error message from server
         if (response.status === 409) {
@@ -111,9 +109,14 @@ const Register = () => {
               fontSize: "28px",
               fontWeight: "bold",
               color: "#2d3748",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
           >
-            📝 Регистрация
+            <PencilSquareIcon style={{ width: "28px", height: "28px" }} />
+            Регистрация
           </h2>
           <p
             style={{
@@ -273,8 +276,14 @@ const Register = () => {
               onFocus={(e) => (e.target.style.borderColor = "#4299e1")}
               onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
             >
-              <option value="user">👤 Потребител</option>
-              <option value="therapist">🩺 Терапевт</option>
+              <option value="user">
+                <UserIcon style={{ width: '16px', height: '16px', display: 'inline', marginRight: '4px' }} />
+                Потребител
+              </option>
+              <option value="therapist">
+                <UserGroupIcon style={{ width: '16px', height: '16px', display: 'inline', marginRight: '4px' }} />
+                Терапевт
+              </option>
             </select>
           </div>
 

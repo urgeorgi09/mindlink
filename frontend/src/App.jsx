@@ -28,6 +28,7 @@ import { usePresence } from "./hooks/usePresence";
 import './styles/presence.css';
 
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Journal from "./pages/Journal";
@@ -42,6 +43,7 @@ import TherapistVerification from "./pages/TherapistVerification";
 import Users from "./pages/Users";
 import Therapist from "./pages/Therapist";
 import MoodTrackerPage from "./pages/MoodTracker";
+import Analytics from "./pages/Analytics";
 import { EmotionsPage } from "./components/PlaceholderComponents";
 
 function NavLink({ to, children, emoji, onClick, IconComponent }) {
@@ -500,12 +502,8 @@ function AppContent() {
   usePresence();
 
   const getRoleGradient = () => {
-    const isLoggedIn = localStorage.getItem("token");
-    if (!isLoggedIn) return "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%)";
-    switch (userRole) {
-      case "therapist": return "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%)";
-      default: return "linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)";
-    }
+    // Винаги използвай зеления градиент
+    return "linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)";
   };
 
   const getRoleLogo = () => {
@@ -602,7 +600,7 @@ function AppContent() {
           }}
         >
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/account" element={<Dashboard />} />
@@ -610,6 +608,7 @@ function AppContent() {
             <Route path="/journal" element={<Journal />} />
             <Route path="/mood" element={<MoodTrackerPage />} />
             <Route path="/emotions" element={<EmotionsPage />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/therapists" element={<TherapistsPage />} />
             <Route path="/therapist-notes" element={<TherapistNotes />} />
             <Route path="/therapist-chat" element={<TherapistChat />} />
@@ -625,7 +624,7 @@ function AppContent() {
 
         <footer
           style={{
-            background: "linear-gradient(135deg, #569b5c 0%, #4a8751 100%)",
+            background: "linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)",
             padding: window.innerWidth < 768 ? "15px 10px" : "30px 20px",
             textAlign: "center",
             color: "white",

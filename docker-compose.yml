@@ -12,7 +12,6 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     command: postgres -c 'max_connections=200'
 
   # Бекенд - Основен (port 5000)
@@ -22,17 +21,22 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://postgres:050310@mindlink-db:5432/mindlink
+      - DB_HOST=mindlink-db
+      - DB_PORT=5432
+      - DB_NAME=mindlink
+      - DB_USER=postgres
+      - DB_PASSWORD=050310
       - PORT=5000
+      - JWT_SECRET=Ivet_is_the_best_12034
     depends_on:
       - mindlink-db
 
-  # Фронтенд - Основен (port 80)
+  # Фронтенд - Основен (port 3000)
   frontend:
     build: ./frontend
     container_name: mindlink-frontend
     ports:
-      - "80:5173"
+      - "3000:80"
     depends_on:
       - backend
 
@@ -44,24 +48,17 @@ services:
       - "5001:5001"
     environment:
       - PORT=5001
-      - DB_HOST=mindlink-db
-      - DB_PORT=5432
-      - DB_NAME=mindlink_admin
-      - DB_USER=postgres
-      - DB_PASSWORD=050310
+      - DATABASE_URL=postgresql://postgres:050310@mindlink-db:5432/mindlink
       - JWT_SECRET=mindlink_admin_secret_2025
-      - CORS_ORIGIN=http://localhost:5174
-      - MAIN_BACKEND_URL=http://backend:5000
     depends_on:
       - mindlink-db
-      - backend
 
   # Фронтенд - Админ (port 5174)
   admin-frontend:
     build: ./admin-frontend
     container_name: mindlink-admin-frontend
     ports:
-      - "5174:5174"
+      - "5174:3001"
     environment:
       - VITE_API_URL=http://localhost:5001
     depends_on:

@@ -6,19 +6,25 @@ const path = require('path');
 const { Pool } = require('pg');
 const axios = require('axios');
 const cheerio = require('cheerio');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mindlink_secret_key_2025';
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://mindlink_user:mindlink_pass@localhost:5432/mindlink';
+
+// PostgreSQL connection using environment variables
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'mindlink',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'password'
+});
 
 // In-memory typing status storage
 const typingStatus = new Map();
 
-// PostgreSQL connection
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-});
+
 
 // Initialize database tables
 const initDB = async () => {
@@ -869,6 +875,17 @@ app.get('/api/mood/entries', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete all mood entries
+app.delete('/api/mood/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM mood_entries WHERE user_id = $1', [req.user.id]);
+        res.json({ message: 'Всички записи за настроение са изтрити' });
+    } catch (error) {
+        console.error('Error deleting mood entries:', error);
+        res.status(500).json({ message: 'Грешка при изтриване' });
+    }
+});
+
 // Get patient emotions (therapist only)
 app.get('/api/therapist/patient-emotions/:patientId', authenticateToken, async (req, res) => {
     try {
@@ -947,6 +964,17 @@ app.get('/api/journal/entries', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error fetching journal entries:', error);
         res.status(500).json({ message: 'Грешка при зареждане на записите' });
+    }
+});
+
+// Delete all journal entries
+app.delete('/api/journal/delete-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM journal_entries WHERE user_id = $1', [req.user.id]);
+        res.json({ message: 'Всички дневникови записи са изтрити' });
+    } catch (error) {
+        console.error('Error deleting journal entries:', error);
+        res.status(500).json({ message: 'Грешка при изтриване' });
     }
 });
 
@@ -1112,6 +1140,70 @@ app.post('/api/admin/verify/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Analytics endpoint - role-based statistics
+app.get('/api/analytics', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role === 'user') {
+            // User analytics - personal stats
+            const moodCount = await pool.query('SELECT COUNT(*) FROM mood_entries WHERE user_id = $1', [req.user.id]);
+            const journalCount = await pool.query('SELECT COUNT(*) FROM journal_entries WHERE user_id = $1', [req.user.id]);
+            const avgMood = await pool.query('SELECT AVG(mood) FROM mood_entries WHERE user_id = $1', [req.user.id]);
+            
+            res.json({
+                moodEntries: parseInt(moodCount.rows[0].count),
+                journalEntries: parseInt(journalCount.rows[0].count),
+                averageMood: parseFloat(avgMood.rows[0].avg) || 0
+            });
+        } else if (req.user.role === 'therapist') {
+            // Therapist analytics - patient stats
+            const patientCount = await pool.query(
+                'SELECT COUNT(*) FROM therapist_patients WHERE therapist_id = $1',
+                [req.user.id]
+            );
+            const sessionCount = await pool.query(
+                'SELECT COUNT(*) FROM notes WHERE therapist_id = $1 AND date >= NOW() - INTERVAL \'30 days\'',
+                [req.user.id]
+            );
+            const messageCount = await pool.query(
+                'SELECT COUNT(DISTINCT recipient_id) FROM messages WHERE sender_id = $1',
+                [req.user.id]
+            );
+            
+            res.json({
+                totalPatients: parseInt(patientCount.rows[0].count),
+                sessionsThisMonth: parseInt(sessionCount.rows[0].count),
+                activeChats: parseInt(messageCount.rows[0].count)
+            });
+        } else if (req.user.role === 'admin') {
+            // Admin analytics - platform-wide stats
+            const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
+            const totalTherapists = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['therapist']);
+            const totalPatients = await pool.query('SELECT COUNT(DISTINCT patient_id) FROM therapist_patients');
+            const moodCount = await pool.query('SELECT COUNT(*) FROM mood_entries');
+            const journalCount = await pool.query('SELECT COUNT(*) FROM journal_entries');
+            const avgMood = await pool.query('SELECT AVG(mood) FROM mood_entries');
+            const activeUsers = await pool.query(
+                'SELECT COUNT(DISTINCT user_id) FROM mood_entries WHERE date >= NOW() - INTERVAL \'7 days\''
+            );
+            
+            res.json({
+                totalUsers: parseInt(totalUsers.rows[0].count),
+                totalTherapists: parseInt(totalTherapists.rows[0].count),
+                totalPatients: parseInt(totalPatients.rows[0].count),
+                activeUsers: parseInt(activeUsers.rows[0].count),
+                moodEntries: parseInt(moodCount.rows[0].count),
+                journalEntries: parseInt(journalCount.rows[0].count),
+                averageMood: parseFloat(avgMood.rows[0].avg) || 0
+            });
+        } else {
+            res.status(403).json({ message: 'Достъп отказан' });
+        }
+    } catch (error) {
+        console.error('Error fetching analytics:', error);
+        res.status(500).json({ message: 'Грешка при зареждане на аналитиката' });
+    }
+});
+
 // Admin sync endpoint - get all data for admin dashboard
 app.get('/api/admin/sync-data', async (req, res) => {
     try {
@@ -1150,5 +1242,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📱 Frontend: http://localhost:${PORT}`);
     console.log(`🔧 API: http://localhost:${PORT}/api`);
-    console.log(`🐘 PostgreSQL: ${DATABASE_URL}`);
+    console.log(`🐘 PostgreSQL: postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
 });

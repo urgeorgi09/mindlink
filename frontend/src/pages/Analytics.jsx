@@ -1,350 +1,482 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAnonymous } from '../context/AnonymousContext';
+import {
+  ChartBarIcon,
+  HeartIcon,
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon,
+  CalendarIcon,
+  ArrowTrendingUpIcon,
+  ArrowLeftIcon
+} from '@heroicons/react/24/outline';
 
 const Analytics = () => {
-  const [moodData, setMoodData] = useState([]);
-  const [journalData, setJournalData] = useState([]);
-  const [timeRange, setTimeRange] = useState("7"); // days
+  const navigate = useNavigate();
+  const { user } = useAnonymous();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, [timeRange]);
+    loadAnalytics();
+  }, [user]);
 
-  const fetchData = async () => {
+  const loadAnalytics = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, redirecting to login');
+        navigate('/login');
+        return;
+      }
       
-      const moodResponse = await fetch("/api/mood/entries", {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch('/api/analytics', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      const moodData = await moodResponse.json();
       
-      const journalResponse = await fetch("/api/journal/entries", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const journalData = await journalResponse.json();
-
-      const days = parseInt(timeRange);
-      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-      setMoodData((moodData.entries || []).filter((entry) => new Date(entry.date) >= cutoff));
-      setJournalData((journalData.entries || []).filter((entry) => new Date(entry.date) >= cutoff));
+      if (response.status === 401 || response.status === 403) {
+        console.log('Token invalid, redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error('Failed to load analytics');
+      }
+      
+      const data = await response.json();
+      setStats(data);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setMoodData([]);
-      setJournalData([]);
+      console.error('Error loading analytics:', error);
+      setStats({});
+    } finally {
+      setLoading(false);
     }
   };
 
-  const calculateAverage = (data, field) => {
-    if (data.length === 0) return 0;
-    return (data.reduce((sum, entry) => sum + entry[field], 0) / data.length).toFixed(1);
-  };
-
-  const getMoodTrend = () => {
-    if (moodData.length < 2) return "stable";
-    const recent = moodData.slice(0, Math.ceil(moodData.length / 2));
-    const older = moodData.slice(Math.ceil(moodData.length / 2));
-
-    const recentAvg = calculateAverage(recent, "mood");
-    const olderAvg = calculateAverage(older, "mood");
-
-    if (recentAvg > olderAvg + 0.5) return "improving";
-    if (recentAvg < olderAvg - 0.5) return "declining";
-    return "stable";
-  };
-
-  const getJournalStats = () => {
-    const categories = {};
-    let totalWords = 0;
-
-    journalData.forEach((entry) => {
-      categories[entry.category] = (categories[entry.category] || 0) + 1;
-      totalWords += entry.word_count || 0;
-    });
-
-    return {
-      categories,
-      totalWords,
-      avgWords: journalData.length ? (totalWords / journalData.length).toFixed(0) : 0,
-    };
-  };
-
-  const trend = getMoodTrend();
-  const journalStats = getJournalStats();
-
-  const getTrendEmoji = (trend) => {
-    switch (trend) {
-      case "improving":
-        return "📈";
-      case "declining":
-        return "📉";
-      default:
-        return "➡️";
-    }
-  };
-
-  const getTrendColor = (trend) => {
-    switch (trend) {
-      case "improving":
-        return "#10b981";
-      case "declining":
-        return "#ef4444";
-      default:
-        return "#6b7280";
-    }
-  };
-
-  return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px",
-        }}
-      >
-        <h1 style={{ color: "#2d3748", margin: 0 }}>📈 Анализи и статистики</h1>
-
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          style={{
-            padding: "8px 16px",
-            border: "2px solid #e2e8f0",
-            borderRadius: "8px",
-            fontSize: "14px",
-          }}
-        >
-          <option value="7">Последните 7 дни</option>
-          <option value="30">Последните 30 дни</option>
-          <option value="90">Последните 90 дни</option>
-        </select>
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <h2>Зареждане...</h2>
       </div>
+    );
+  }
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "20px",
-        }}
-      >
-        {/* Mood Analytics */}
-        <div
+  // User Analytics
+  if (user.role === 'user') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f0f8f4 0%, #e8f5ee 50%, #e0f2e9 100%)',
+        padding: '40px 20px'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: 'white',
+              border: '2px solid #d4edda',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              marginBottom: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '600',
+              color: '#6da65f'
+            }}
+          >
+            <ArrowLeftIcon style={{ width: '20px', height: '20px' }} />
+            Назад
+          </button>
+
+          <h1 style={{
+            fontSize: '48px',
+            color: '#1e293b',
+            marginBottom: '40px',
+            fontWeight: '800',
+            background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Вашата аналитика
+          </h1>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '24px',
+            marginBottom: '40px'
+          }}>
+            {[
+              {
+                icon: HeartIcon,
+                title: 'Записи за настроение',
+                value: stats.moodEntries || 0,
+                color: '#91c481',
+                gradient: 'linear-gradient(135deg, #91c481 0%, #7fb570 100%)'
+              },
+              {
+                icon: ChatBubbleLeftRightIcon,
+                title: 'Дневникови записи',
+                value: stats.journalEntries || 0,
+                color: '#a8d99c',
+                gradient: 'linear-gradient(135deg, #a8d99c 0%, #91c481 100%)'
+              },
+              {
+                icon: ArrowTrendingUpIcon,
+                title: 'Средно настроение',
+                value: (stats.averageMood || 0).toFixed(1) + '/10',
+                color: '#7fb570',
+                gradient: 'linear-gradient(135deg, #7fb570 0%, #6da65f 100%)'
+              }
+            ].map((stat, index) => (
+              <div
+                key={index}
+                style={{
+                  background: 'white',
+                  padding: '32px',
+                  borderRadius: '20px',
+                  border: '1px solid #d4edda',
+                  boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+                }}
+              >
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  background: stat.gradient,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px'
+                }}>
+                  <stat.icon style={{ width: '28px', height: '28px', color: 'white' }} />
+                </div>
+                <h3 style={{
+                  fontSize: '36px',
+                  fontWeight: '800',
+                  color: '#1e293b',
+                  marginBottom: '8px'
+                }}>
+                  {stat.value}
+                </h3>
+                <p style={{ color: '#64748b', fontSize: '15px' }}>
+                  {stat.title}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            border: '1px solid #d4edda',
+            boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+          }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '20px', color: '#1e293b' }}>
+              Вашият прогрес
+            </h2>
+            <p style={{ color: '#64748b', lineHeight: '1.6' }}>
+              Продължавайте да записвате вашето настроение и мисли. Редовното проследяване помага за по-добро разбиране на емоционалното ви състояние.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Therapist Analytics
+  if (user.role === 'therapist') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f0f8f4 0%, #e8f5ee 50%, #e0f2e9 100%)',
+        padding: '40px 20px'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: 'white',
+              border: '2px solid #d4edda',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              marginBottom: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '600',
+              color: '#6da65f'
+            }}
+          >
+            <ArrowLeftIcon style={{ width: '20px', height: '20px' }} />
+            Назад
+          </button>
+
+          <h1 style={{
+            fontSize: '48px',
+            color: '#1e293b',
+            marginBottom: '40px',
+            fontWeight: '800',
+            background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Статистика на пациенти
+          </h1>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '24px',
+            marginBottom: '40px'
+          }}>
+            {[
+              {
+                icon: UserGroupIcon,
+                title: 'Общо пациенти',
+                value: stats.totalPatients || 0,
+                color: '#91c481',
+                gradient: 'linear-gradient(135deg, #91c481 0%, #7fb570 100%)'
+              },
+              {
+                icon: CalendarIcon,
+                title: 'Сесии този месец',
+                value: stats.sessionsThisMonth || 0,
+                color: '#a8d99c',
+                gradient: 'linear-gradient(135deg, #a8d99c 0%, #91c481 100%)'
+              },
+              {
+                icon: ChatBubbleLeftRightIcon,
+                title: 'Активни чатове',
+                value: stats.activeChats || 0,
+                color: '#7fb570',
+                gradient: 'linear-gradient(135deg, #7fb570 0%, #6da65f 100%)'
+              }
+            ].map((stat, index) => (
+              <div
+                key={index}
+                style={{
+                  background: 'white',
+                  padding: '32px',
+                  borderRadius: '20px',
+                  border: '1px solid #d4edda',
+                  boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+                }}
+              >
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  background: stat.gradient,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px'
+                }}>
+                  <stat.icon style={{ width: '28px', height: '28px', color: 'white' }} />
+                </div>
+                <h3 style={{
+                  fontSize: '36px',
+                  fontWeight: '800',
+                  color: '#1e293b',
+                  marginBottom: '8px'
+                }}>
+                  {stat.value}
+                </h3>
+                <p style={{ color: '#64748b', fontSize: '15px' }}>
+                  {stat.title}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            border: '1px solid #d4edda',
+            boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+          }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '20px', color: '#1e293b' }}>
+              Преглед на активността
+            </h2>
+            <p style={{ color: '#64748b', lineHeight: '1.6' }}>
+              Вашите пациенти показват отличен прогрес. Продължавайте с професионалната подкрепа.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin Analytics - All platform statistics
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f0f8f4 0%, #e8f5ee 50%, #e0f2e9 100%)',
+      padding: '40px 20px'
+    }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <button
+          onClick={() => navigate('/')}
           style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "16px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            background: 'white',
+            border: '2px solid #d4edda',
+            padding: '12px 24px',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            marginBottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: '600',
+            color: '#6da65f'
           }}
         >
-          <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>😊 Настроение</h2>
+          <ArrowLeftIcon style={{ width: '20px', height: '20px' }} />
+          Назад
+        </button>
 
-          {moodData.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#718096" }}>
-              Няма данни за настроението в този период
-            </p>
-          ) : (
-            <>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: "15px",
-                  marginBottom: "20px",
-                }}
-              >
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "#3b82f6" }}>
-                    {calculateAverage(moodData, "mood")}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Средно настроение</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "#10b981" }}>
-                    {calculateAverage(moodData, "energy")}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Средна енергия</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "#f59e0b" }}>
-                    {calculateAverage(moodData, "anxiety")}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Средна тревожност</div>
-                </div>
-              </div>
+        <h1 style={{
+          fontSize: '48px',
+          color: '#1e293b',
+          marginBottom: '40px',
+          fontWeight: '800',
+          background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          Платформена аналитика
+        </h1>
 
-              <div
-                style={{
-                  padding: "15px",
-                  background: "#f7fafc",
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <span style={{ fontSize: "24px" }}>{getTrendEmoji(trend)}</span>
-                <div>
-                  <div style={{ fontWeight: "600", color: getTrendColor(trend) }}>
-                    {trend === "improving"
-                      ? "Подобряване"
-                      : trend === "declining"
-                        ? "Влошаване"
-                        : "Стабилно"}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Тенденция за периода</div>
-                </div>
+        {/* Platform Overview */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '24px',
+          marginBottom: '40px'
+        }}>
+          {[
+            {
+              icon: UserGroupIcon,
+              title: 'Общо потребители',
+              value: stats.totalUsers || 0,
+              color: '#91c481',
+              gradient: 'linear-gradient(135deg, #91c481 0%, #7fb570 100%)'
+            },
+            {
+              icon: UserGroupIcon,
+              title: 'Активни потребители',
+              value: stats.activeUsers || 0,
+              color: '#a8d99c',
+              gradient: 'linear-gradient(135deg, #a8d99c 0%, #91c481 100%)'
+            },
+            {
+              icon: UserGroupIcon,
+              title: 'Терапевти',
+              value: stats.totalTherapists || 0,
+              color: '#7fb570',
+              gradient: 'linear-gradient(135deg, #7fb570 0%, #6da65f 100%)'
+            },
+            {
+              icon: HeartIcon,
+              title: 'Записи за настроение',
+              value: stats.moodEntries || 0,
+              color: '#c4e3ba',
+              gradient: 'linear-gradient(135deg, #c4e3ba 0%, #a8d99c 100%)'
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              style={{
+                background: 'white',
+                padding: '32px',
+                borderRadius: '20px',
+                border: '1px solid #d4edda',
+                boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+              }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                background: stat.gradient,
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '20px'
+              }}>
+                <stat.icon style={{ width: '28px', height: '28px', color: 'white' }} />
               </div>
-            </>
-          )}
+              <h3 style={{
+                fontSize: '36px',
+                fontWeight: '800',
+                color: '#1e293b',
+                marginBottom: '8px'
+              }}>
+                {stat.value}
+              </h3>
+              <p style={{ color: '#64748b', fontSize: '15px' }}>
+                {stat.title}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Journal Analytics */}
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "16px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>📖 Дневник</h2>
-
-          {journalData.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#718096" }}>
-              Няма записи в дневника за този период
-            </p>
-          ) : (
-            <>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "15px",
-                  marginBottom: "20px",
-                }}
-              >
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "#8b5cf6" }}>
-                    {journalData.length}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Общо записи</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "#06b6d4" }}>
-                    {journalStats.avgWords}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#718096" }}>Средно думи</div>
-                </div>
+        {/* Detailed Sections */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            border: '1px solid #d4edda',
+            boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+          }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '20px', color: '#1e293b' }}>
+              Потребителска активност
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Дневникови записи</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{stats.journalEntries || 0}</span>
               </div>
-
-              <div>
-                <h4 style={{ marginBottom: "10px", color: "#4a5568" }}>Категории:</h4>
-                {Object.entries(journalStats.categories).map(([category, count]) => {
-                  const categoryLabels = {
-                    personal: "📝 Личен",
-                    gratitude: "🙏 Благодарност",
-                    goals: "🎯 Цели",
-                    reflection: "🤔 Размисли",
-                  };
-
-                  return (
-                    <div
-                      key={category}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        padding: "8px 0",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <span>{categoryLabels[category] || category}</span>
-                      <span style={{ fontWeight: "600" }}>{count}</span>
-                    </div>
-                  );
-                })}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Записи за настроение</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{stats.moodEntries || 0}</span>
               </div>
-            </>
-          )}
-        </div>
-
-        {/* Overall Stats */}
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "16px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2 style={{ marginBottom: "20px", color: "#2d3748" }}>📊 Обща активност</h2>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div
-              style={{
-                padding: "15px",
-                background: "#eff6ff",
-                borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>📈 Записи за настроение</span>
-              <span style={{ fontWeight: "bold", color: "#3b82f6" }}>{moodData.length}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Средно настроение</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{(stats.averageMood || 0).toFixed(1)}/10</span>
+              </div>
             </div>
+          </div>
 
-            <div
-              style={{
-                padding: "15px",
-                background: "#f0fdf4",
-                borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>📝 Записи в дневника</span>
-              <span style={{ fontWeight: "bold", color: "#10b981" }}>{journalData.length}</span>
-            </div>
-
-            <div
-              style={{
-                padding: "15px",
-                background: "#fefce8",
-                borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>📝 Общо думи</span>
-              <span style={{ fontWeight: "bold", color: "#f59e0b" }}>
-                {journalStats.totalWords}
-              </span>
-            </div>
-
-            <div
-              style={{
-                padding: "15px",
-                background: "#f5f3ff",
-                borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>🔥 Активни дни</span>
-              <span style={{ fontWeight: "bold", color: "#8b5cf6" }}>
-                {
-                  new Set(
-                    [...moodData, ...journalData].map((entry) =>
-                      new Date(entry.date).toDateString()
-                    )
-                  ).size
-                }
-              </span>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '20px',
+            border: '1px solid #d4edda',
+            boxShadow: '0 4px 16px rgba(109, 166, 95, 0.08)'
+          }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '20px', color: '#1e293b' }}>
+              Терапевтска активност
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Общо пациенти</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{stats.totalPatients || 0}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Активни сесии</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{stats.sessionsThisMonth || 0}</span>
+              </div>
             </div>
           </div>
         </div>

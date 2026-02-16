@@ -8,67 +8,91 @@ const Privacy = () => {
   const handleExportData = async () => {
     setExportLoading(true);
 
-    // Collect all user data
-    const userData = {
-      moodEntries: JSON.parse(localStorage.getItem("moodEntries") || "[]"),
-      journalEntries: JSON.parse(localStorage.getItem("journalEntries") || "[]"),
-      therapistNotes: JSON.parse(localStorage.getItem("therapistNotes") || "[]"),
-      userSettings: JSON.parse(localStorage.getItem("userSettings") || "{}"),
-      exportDate: new Date().toISOString(),
-      version: "1.0",
-    };
+    try {
+      const token = localStorage.getItem("token");
+      
+      const [moodRes, journalRes] = await Promise.all([
+        fetch("/api/mood/entries", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/journal/entries", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
 
-    // Create and download file
-    const dataStr = JSON.stringify(userData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
+      const moodData = await moodRes.json();
+      const journalData = await journalRes.json();
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `mindlink-data-export-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const userData = {
+        moodEntries: moodData.entries || [],
+        journalEntries: journalData.entries || [],
+        exportDate: new Date().toISOString(),
+        version: "2.0"
+      };
 
-    setTimeout(() => setExportLoading(false), 1000);
+      const dataStr = JSON.stringify(userData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(dataBlob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `mindlink-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Грешка при експортиране на данните");
+    }
+
+    setExportLoading(false);
   };
 
-  const handleDeleteData = () => {
+  const handleDeleteData = async () => {
     if (deleteConfirm !== "ИЗТРИЙ ДАННИТЕ") {
       alert('Моля, въведете точно "ИЗТРИЙ ДАННИТЕ" за потвърждение.');
       return;
     }
 
-    // Clear all data
-    localStorage.removeItem("moodEntries");
-    localStorage.removeItem("journalEntries");
-    localStorage.removeItem("therapistNotes");
-    localStorage.removeItem("userSettings");
+    try {
+      const token = localStorage.getItem("token");
+      
+      await Promise.all([
+        fetch("/api/mood/delete-all", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/journal/delete-all", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+      ]);
 
-    alert("Всички данни са изтрити успешно.");
-    setDeleteConfirm("");
-    setShowDeleteForm(false);
+      alert("Всички данни са изтрити успешно.");
+      setDeleteConfirm("");
+      setShowDeleteForm(false);
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Грешка при изтриване на данните");
+    }
   };
 
-  const getDataSize = () => {
-    const moodEntries = localStorage.getItem("moodEntries") || "[]";
-    const journalEntries = localStorage.getItem("journalEntries") || "[]";
-    const therapistNotes = localStorage.getItem("therapistNotes") || "[]";
+  const [dataSize, setDataSize] = useState("0");
 
-    const totalSize = moodEntries.length + journalEntries.length + therapistNotes.length;
-    return (totalSize / 1024).toFixed(2); // KB
-  };
+  const [moodCount, setMoodCount] = useState(0);
+  const [journalCount, setJournalCount] = useState(0);
 
-  const getDataCounts = () => {
-    const moodCount = JSON.parse(localStorage.getItem("moodEntries") || "[]").length;
-    const journalCount = JSON.parse(localStorage.getItem("journalEntries") || "[]").length;
-    const notesCount = JSON.parse(localStorage.getItem("therapistNotes") || "[]").length;
-
-    return { moodCount, journalCount, notesCount };
-  };
-
-  const { moodCount, journalCount, notesCount } = getDataCounts();
+  React.useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const [moodRes, journalRes] = await Promise.all([
+          fetch("/api/mood/entries", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/journal/entries", { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        const moodData = await moodRes.json();
+        const journalData = await journalRes.json();
+        setMoodCount(moodData.entries?.length || 0);
+        setJournalCount(journalData.entries?.length || 0);
+        const size = JSON.stringify({ mood: moodData.entries, journal: journalData.entries }).length;
+        setDataSize((size / 1024).toFixed(2));
+      } catch (error) {
+        console.error("Error fetching counts:", error);
+      }
+    };
+    fetchCounts();
+  }, []);
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
@@ -122,19 +146,7 @@ const Privacy = () => {
             </div>
             <div style={{ fontSize: "12px", color: "#4a5568" }}>Записи в дневника</div>
           </div>
-          <div
-            style={{
-              textAlign: "center",
-              padding: "15px",
-              background: "#fef3c7",
-              borderRadius: "8px",
-            }}
-          >
-            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#f59e0b" }}>
-              {notesCount}
-            </div>
-            <div style={{ fontSize: "12px", color: "#4a5568" }}>Терапевтични бележки</div>
-          </div>
+
           <div
             style={{
               textAlign: "center",
@@ -144,7 +156,7 @@ const Privacy = () => {
             }}
           >
             <div style={{ fontSize: "24px", fontWeight: "bold", color: "#8b5cf6" }}>
-              {getDataSize()}
+              {dataSize}
             </div>
             <div style={{ fontSize: "12px", color: "#4a5568" }}>KB данни</div>
           </div>

@@ -1,0 +1,6 @@
+🚀 Server running on port 5001
+📱 Frontend: http://localhost:5001
+🔧 API: http://localhost:5001/api
+🐘 PostgreSQL: postgresql://postgres:050310@localhost:5432/mindlink_admin
+Database tables initialized
+UIN, verified and session_price columns added/verified

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAnonymous } from "../context/AnonymousContext";
+import { KeyIcon } from '@heroicons/react/24/outline';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAnonymous();
 
   const handleChange = (e) => {
     setFormData({
@@ -36,9 +38,9 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        window.location.href = "/";
+        login(data.user, data.token);
+        navigate("/");
+        window.location.reload();
       } else {
         // Show specific error message from server
         if (response.status === 401) {
@@ -69,8 +71,7 @@ const Login = () => {
       localStorage.setItem("token", "demo-token");
       localStorage.setItem("user", JSON.stringify(demoUser));
 
-      // Refresh page to load new role
-      window.location.href = "/";
+      navigate("/");
     } finally {
       setLoading(false);
     }
@@ -103,9 +104,14 @@ const Login = () => {
               fontSize: "28px",
               fontWeight: "bold",
               color: "#2d3748",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
           >
-            🔑 Влизане
+            <KeyIcon style={{ width: "28px", height: "28px" }} />
+            Влизане
           </h2>
           <p
             style={{

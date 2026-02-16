@@ -937,6 +937,67 @@ app.get('/api/admin/verifications', authenticateToken, async (req, res) => {
     }
 });
 
+// Analytics endpoint - role-based statistics
+app.get('/api/analytics', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role === 'user') {
+            const moodCount = await pool.query('SELECT COUNT(*) FROM mood_entries WHERE user_id = $1', [req.user.id]);
+            const journalCount = await pool.query('SELECT COUNT(*) FROM journal_entries WHERE user_id = $1', [req.user.id]);
+            const avgMood = await pool.query('SELECT AVG(mood) FROM mood_entries WHERE user_id = $1', [req.user.id]);
+            
+            res.json({
+                moodEntries: parseInt(moodCount.rows[0].count),
+                journalEntries: parseInt(journalCount.rows[0].count),
+                averageMood: parseFloat(avgMood.rows[0].avg) || 0
+            });
+        } else if (req.user.role === 'therapist') {
+            const patientCount = await pool.query(
+                'SELECT COUNT(*) FROM therapist_patients WHERE therapist_id = $1',
+                [req.user.id]
+            );
+            const sessionCount = await pool.query(
+                'SELECT COUNT(*) FROM notes WHERE therapist_id = $1 AND date >= NOW() - INTERVAL \'30 days\'',
+                [req.user.id]
+            );
+            const messageCount = await pool.query(
+                'SELECT COUNT(DISTINCT recipient_id) FROM messages WHERE sender_id = $1',
+                [req.user.id]
+            );
+            
+            res.json({
+                totalPatients: parseInt(patientCount.rows[0].count),
+                sessionsThisMonth: parseInt(sessionCount.rows[0].count),
+                activeChats: parseInt(messageCount.rows[0].count)
+            });
+        } else if (req.user.role === 'admin') {
+            const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
+            const totalTherapists = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['therapist']);
+            const totalPatients = await pool.query('SELECT COUNT(DISTINCT patient_id) FROM therapist_patients');
+            const moodCount = await pool.query('SELECT COUNT(*) FROM mood_entries');
+            const journalCount = await pool.query('SELECT COUNT(*) FROM journal_entries');
+            const avgMood = await pool.query('SELECT AVG(mood) FROM mood_entries');
+            const activeUsers = await pool.query(
+                'SELECT COUNT(DISTINCT user_id) FROM mood_entries WHERE date >= NOW() - INTERVAL \'7 days\''
+            );
+            
+            res.json({
+                totalUsers: parseInt(totalUsers.rows[0].count),
+                totalTherapists: parseInt(totalTherapists.rows[0].count),
+                totalPatients: parseInt(totalPatients.rows[0].count),
+                activeUsers: parseInt(activeUsers.rows[0].count),
+                moodEntries: parseInt(moodCount.rows[0].count),
+                journalEntries: parseInt(journalCount.rows[0].count),
+                averageMood: parseFloat(avgMood.rows[0].avg) || 0
+            });
+        } else {
+            res.status(403).json({ message: 'Достъп отказан' });
+        }
+    } catch (error) {
+        console.error('Error fetching analytics:', error);
+        res.status(500).json({ message: 'Грешка при зареждане на аналитиката' });
+    }
+});
+
 // Get system stats (admin only)
 app.get('/api/admin/stats', async (req, res) => {
     try {

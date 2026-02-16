@@ -9,17 +9,32 @@ const AdminDashboard = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('therapists');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalUsers: 0, totalTherapists: 0, pendingVerifications: 0 });
+  const [stats, setStats] = useState({ totalUsers: 0, totalTherapists: 0, pendingVerifications: 0, totalMoodEntries: 0, totalJournalEntries: 0, totalMessages: 0 });
 
   useEffect(() => {
     fetchTherapists();
     fetchAllUsers();
-    calculateStats();
+    fetchSystemStats();
   }, []);
+
+  const fetchSystemStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(prev => ({ ...prev, ...data }));
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchTherapists = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/therapists/unverified`);
+      const response = await fetch('/api/admin/therapists/unverified');
       const data = await response.json();
       setTherapists(data.therapists || []);
     } catch (error) {
@@ -31,7 +46,7 @@ const AdminDashboard = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/users`);
+      const response = await fetch('/api/admin/users');
       const data = await response.json();
       setAllUsers(data.users || []);
       calculateStats(data.users || []);
@@ -44,7 +59,7 @@ const AdminDashboard = () => {
     const totalUsers = users.filter(u => u.role === 'user').length;
     const totalTherapists = users.filter(u => u.role === 'therapist' && u.verified).length;
     const pendingVerifications = users.filter(u => u.role === 'therapist' && !u.verified).length;
-    setStats({ totalUsers, totalTherapists, pendingVerifications });
+    setStats(prev => ({ ...prev, totalUsers, totalTherapists, pendingVerifications }));
   };
 
   const deleteUser = async (userId, userName) => {
@@ -95,7 +110,7 @@ const AdminDashboard = () => {
 
   const verifyTherapist = async (therapistId) => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/therapists/verify`, {
+      const response = await fetch('/api/admin/therapists/verify', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ therapistId }),
@@ -116,7 +131,7 @@ const AdminDashboard = () => {
   const syncData = async () => {
     try {
       toast.info("Синхронизация...");
-      const response = await fetch(`${API_URL}/api/sync/main-data`);
+      const response = await fetch('/api/sync/main-data');
       const data = await response.json();
       if (response.ok) {
         toast.success("Данните са синхронизирани!");
@@ -179,31 +194,45 @@ const AdminDashboard = () => {
       {/* Статистики */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
         <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalUsers}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalUsers || 0}</div>
           <div style={{ fontSize: '14px', opacity: 0.9 }}>
             <UserIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
             Потребители
           </div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalTherapists}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalTherapists || 0}</div>
           <div style={{ fontSize: '14px', opacity: 0.9 }}>
             <ShieldCheckIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
             Терапевти
           </div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.pendingVerifications}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.pendingVerifications || 0}</div>
           <div style={{ fontSize: '14px', opacity: 0.9 }}>
             <ClockIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
             Чакат верификация
           </div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{allUsers.length}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalMoodEntries || 0}</div>
           <div style={{ fontSize: '14px', opacity: 0.9 }}>
             <ChartBarIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
-            Общо акаунти
+            Mood записи
+          </div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalJournalEntries || 0}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>
+            <ChartBarIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
+            Дневник записи
+          </div>
+        </div>
+        <div style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)', borderRadius: '12px', padding: '20px', color: 'white' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats.totalMessages || 0}</div>
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>
+            <ChartBarIcon style={{ width: "16px", height: "16px", strokeWidth: 2, display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
+            Съобщения
           </div>
         </div>
       </div>
