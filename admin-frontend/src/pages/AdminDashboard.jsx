@@ -128,23 +128,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const syncData = async () => {
-    try {
-      toast.info("Синхронизация...");
-      const response = await fetch('/api/sync/main-data');
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Данните са синхронизирани!");
-        fetchTherapists();
-        fetchAllUsers();
-      } else {
-        toast.error("Грешка при синхронизация");
-      }
-    } catch (error) {
-      toast.error("Грешка при синхронизация");
-    }
-  };
-
   const getRoleBadge = (role, verified) => {
     if (role === 'admin') return { Icon: Cog6ToothIcon, text: 'Админ', color: '#ef4444' };
     if (role === 'therapist') {
@@ -169,25 +152,6 @@ const AdminDashboard = () => {
       <h1 style={{ fontSize: "32px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "15px" }}>
         <Cog6ToothIcon style={{ width: "32px", height: "32px", strokeWidth: 2 }} />
         Админ Панел
-        <button
-          onClick={syncData}
-          style={{
-            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            color: "white",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "600",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px"
-          }}
-        >
-          <ArrowPathIcon style={{ width: "16px", height: "16px", strokeWidth: 2 }} />
-          Синхронизирай данни
-        </button>
       </h1>
       <p style={{ color: "#6b7280", marginBottom: "30px" }}>Управление на потребители и система</p>
 
