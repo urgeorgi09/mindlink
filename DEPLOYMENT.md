@@ -48,7 +48,7 @@ git push origin main
 ```bash
 # 1. Клонирай кода
 cd /opt
-sudo git clone https://github.com/ТВОЕТО-USERNAME/mindlink.git
+sudo git clone https://github.com/urgeorgi09/mindlink.git
 cd mindlink
 
 # 2. Копирай .env файла
