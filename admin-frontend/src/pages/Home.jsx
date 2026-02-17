@@ -631,7 +631,7 @@ const Home = () => {
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              Здравейте, {user.name}! 👋
+              Здравейте, {user.name}! 
             </h1>
             
             <p style={{ 

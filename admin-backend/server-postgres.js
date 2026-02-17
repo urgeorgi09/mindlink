@@ -9,7 +9,7 @@ const cheerio = require('cheerio');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const DATABASE_URL = `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || '050310'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'mindlink_admin'}`;
+const DATABASE_URL = `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || '050310'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'mindlink'}`;
 const JWT_SECRET = process.env.JWT_SECRET || 'mindlink_secret_key_2025';
 
 // In-memory typing status storage
@@ -999,7 +999,7 @@ app.get('/api/analytics', authenticateToken, async (req, res) => {
 });
 
 // Get system stats (admin only)
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/overview', async (req, res) => {
     try {
         const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
         const totalTherapists = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['therapist']);

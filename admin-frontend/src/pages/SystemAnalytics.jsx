@@ -23,7 +23,7 @@ const SystemAnalytics = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/admin/stats`);
+      const response = await fetch(`${API_URL}/api/admin/overview`);
       const data = await response.json();
       setStats(data);
     } catch (error) {

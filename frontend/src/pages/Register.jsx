@@ -61,7 +61,14 @@ const Register = () => {
 
       if (response.ok) {
         login(data.user, data.token);
-        navigate("/");
+        
+        // Redirect therapists to verification page
+        if (formData.role === 'therapist') {
+          navigate("/therapist-verification");
+        } else {
+          navigate("/");
+        }
+        
         window.location.reload();
       } else {
         // Show specific error message from server

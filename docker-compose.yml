@@ -6,13 +6,18 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 050310
-      POSTGRES_DB: postgres
+      POSTGRES_DB: mindlink
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     command: postgres -c 'max_connections=200'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mindlink"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Бекенд - Основен (port 5000)
   backend:
@@ -29,7 +34,9 @@ services:
       - PORT=5000
       - JWT_SECRET=Ivet_is_the_best_12034
     depends_on:
-      - mindlink-db
+      mindlink-db:
+        condition: service_healthy
+    restart: unless-stopped
 
   # Фронтенд - Основен (port 3000)
   frontend:
@@ -39,6 +46,7 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped
 
   # Бекенд - Админ (port 5001)
   admin-backend:
@@ -48,21 +56,29 @@ services:
       - "5001:5001"
     environment:
       - PORT=5001
-      - DATABASE_URL=postgresql://postgres:050310@mindlink-db:5432/mindlink
+      - DB_HOST=mindlink-db
+      - DB_PORT=5432
+      - DB_NAME=mindlink
+      - DB_USER=postgres
+      - DB_PASSWORD=050310
       - JWT_SECRET=mindlink_admin_secret_2025
+      - MAIN_BACKEND_URL=http://backend:5000
     depends_on:
-      - mindlink-db
+      mindlink-db:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # Фронтенд - Админ (port 5174)
+  # Фронтенд - Админ (port 5175)
   admin-frontend:
     build: ./admin-frontend
     container_name: mindlink-admin-frontend
     ports:
-      - "5174:3001"
+      - "5175:80"
     environment:
       - VITE_API_URL=http://localhost:5001
     depends_on:
       - admin-backend
+    restart: unless-stopped
 
 volumes:
   pgdata:
