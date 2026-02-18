@@ -1032,9 +1032,10 @@ app.get('/api/admin/verifications', authenticateToken, async (req, res) => {
     }
 });
 
-// Get system stats (public temporarily)
+// Get system stats (public - no auth)
 app.get('/api/admin/overview', async (req, res) => {
     try {
+        console.log('📊 /api/admin/overview called - PUBLIC ACCESS');
         
         const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
         const totalTherapists = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['therapist']);
