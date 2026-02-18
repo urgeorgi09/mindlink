@@ -35,7 +35,7 @@ const AdminDashboard = () => {
   const fetchTherapists = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/therapists/unverified', {
+      const response = await fetch(`${API_URL}/api/admin/therapists/unverified`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -50,7 +50,7 @@ const AdminDashboard = () => {
   const fetchAllUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
     toast.confirm(`Сигурни ли сте, че искате да изтриете акаунта на ${userName}?`, async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`/api/admin/users/${userId}`, {
+        const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -93,7 +93,7 @@ const AdminDashboard = () => {
     toast.confirm(`Промяна на ролята на ${userName} на ${newRole}?`, async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`/api/admin/users/${userId}/role`, {
+        const response = await fetch(`${API_URL}/api/admin/users/${userId}/role`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -116,9 +116,13 @@ const AdminDashboard = () => {
 
   const verifyTherapist = async (therapistId) => {
     try {
-      const response = await fetch('/api/admin/therapists/verify', {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/admin/therapists/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ therapistId }),
       });
 
