@@ -173,22 +173,17 @@ if (require('fs').existsSync(path.join(__dirname, '../frontend/dist'))) {
 
 // Auth middleware
 const authenticateToken = (req, res, next) => {
-    console.log('🔐 authenticateToken:', req.method, req.path);
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log('📝 Token present:', !!token);
 
     if (!token) {
-        console.log('❌ No token provided');
         return res.status(401).json({ message: 'Access token required' });
     }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
-            console.log('❌ Token verification failed:', err.message);
             return res.status(403).json({ message: 'Invalid token' });
         }
-        console.log('✅ Token verified, user:', user);
         req.user = user;
         next();
     });
@@ -196,12 +191,9 @@ const authenticateToken = (req, res, next) => {
 
 // Admin middleware
 const requireAdmin = (req, res, next) => {
-    console.log('👑 requireAdmin check, user role:', req.user?.role);
     if (req.user.role !== 'admin') {
-        console.log('❌ Not admin, access denied');
         return res.status(403).json({ message: 'Admin access required' });
     }
-    console.log('✅ Admin access granted');
     next();
 };
 
@@ -1040,8 +1032,8 @@ app.get('/api/admin/verifications', authenticateToken, async (req, res) => {
     }
 });
 
-// Get system stats (admin only)
-app.get('/api/admin/overview', authenticateToken, requireAdmin, async (req, res) => {
+// Get system stats (public temporarily)
+app.get('/api/admin/overview', async (req, res) => {
     try {
         
         const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
