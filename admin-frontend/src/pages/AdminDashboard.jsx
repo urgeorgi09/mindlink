@@ -34,7 +34,10 @@ const AdminDashboard = () => {
 
   const fetchTherapists = async () => {
     try {
-      const response = await fetch('/api/admin/therapists/unverified');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/therapists/unverified', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await response.json();
       setTherapists(data.therapists || []);
     } catch (error) {
@@ -46,7 +49,10 @@ const AdminDashboard = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await response.json();
       setAllUsers(data.users || []);
       calculateStats(data.users || []);
