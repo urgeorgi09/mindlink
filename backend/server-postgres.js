@@ -184,6 +184,14 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Admin middleware
+const requireAdmin = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+};
+
 // Routes
 
 // Register
@@ -1020,7 +1028,7 @@ app.get('/api/admin/verifications', authenticateToken, async (req, res) => {
 });
 
 // Get system stats (admin only)
-app.get('/api/admin/overview', async (req, res) => {
+app.get('/api/admin/overview', authenticateToken, requireAdmin, async (req, res) => {
     try {
         
         const totalUsers = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']);
