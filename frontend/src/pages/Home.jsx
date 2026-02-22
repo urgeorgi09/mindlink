@@ -182,13 +182,13 @@ const Home = () => {
             <div style={{
               display: 'inline-block',
               padding: '8px 20px',
-              background: 'rgba(145, 196, 129, 0.15)',
-              border: '1px solid rgba(145, 196, 129, 0.3)',
+              background: 'rgba(95, 167, 119, 0.1)',
+              border: '1px solid rgba(95, 167, 119, 0.2)',
               borderRadius: '24px',
               marginBottom: '24px'
             }}>
               <span style={{ 
-                color: '#6da65f', 
+                color: '#5fa777', 
                 fontSize: '14px', 
                 fontWeight: '600',
                 letterSpacing: '0.5px',
@@ -196,7 +196,8 @@ const Home = () => {
                 alignItems: 'center',
                 gap: '6px'
               }}>
-                🇧🇬 Създадено в България
+                <ShieldCheckIcon style={{ width: '16px', height: '16px' }} />
+                Създадено в България
               </span>
             </div>
 
@@ -331,15 +332,15 @@ const Home = () => {
               fontWeight: '500'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '20px' }}>🔒</span>
+                <LockClosedIcon style={{ width: '18px', height: '18px', color: '#5fa777' }} />
                 <span>GDPR защита</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '20px' }}>💚</span>
+                <HeartIcon style={{ width: '18px', height: '18px', color: '#5fa777' }} />
                 <span>Вече 47 българи</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '20px' }}>🇧🇬</span>
+                <UserGroupIcon style={{ width: '18px', height: '18px', color: '#5fa777' }} />
                 <span>Български терапевти</span>
               </div>
             </div>
@@ -462,12 +463,11 @@ const Home = () => {
                   fontSize: isMobile ? '36px' : '48px', 
                   fontWeight: '800', 
                   color: '#1e293b',
-                  marginBottom: '8px',
-                  background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
+                  marginBottom: '12px',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}>
-                  🇧🇬
+                  <ShieldCheckIcon style={{ width: '48px', height: '48px', color: '#5fa777' }} />
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
                   Създадено в България
@@ -478,12 +478,11 @@ const Home = () => {
                   fontSize: isMobile ? '36px' : '48px', 
                   fontWeight: '800', 
                   color: '#1e293b',
-                  marginBottom: '8px',
-                  background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
+                  marginBottom: '12px',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}>
-                  🔒
+                  <LockClosedIcon style={{ width: '48px', height: '48px', color: '#5fa777' }} />
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
                   GDPR съответствие
@@ -494,12 +493,11 @@ const Home = () => {
                   fontSize: isMobile ? '36px' : '48px', 
                   fontWeight: '800', 
                   color: '#1e293b',
-                  marginBottom: '8px',
-                  background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
+                  marginBottom: '12px',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}>
-                  💚
+                  <HeartIcon style={{ width: '48px', height: '48px', color: '#5fa777' }} />
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
                   Безплатно за всички

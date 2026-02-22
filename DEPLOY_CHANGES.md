@@ -14,6 +14,16 @@ cd /path/to/mindlink
 
 ## Стъпка 3: Pull промените от Git
 
+### ⚠️ Ако има permission error:
+
+```bash
+# Fix Git permissions
+sudo chown -R $USER:$USER ~/mindlink/.git
+sudo chmod -R u+w ~/mindlink/.git
+```
+
+### Сега pull промените:
+
 ```bash
 git pull origin main
 ```
