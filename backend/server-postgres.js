@@ -1,3 +1,25 @@
+/**
+ * MindLink+ Backend Server
+ * 
+ * Express.js сървър с PostgreSQL база данни за платформата MindLink+
+ * 
+ * Основни функционалности:
+ * - Автентификация и авторизация (JWT)
+ * - Управление на потребители (User/Therapist/Admin roles)
+ * - Mood tracking система
+ * - Journal система
+ * - Chat система с real-time features
+ * - Therapist verification система
+ * - Analytics и статистики
+ * 
+ * Сигурност:
+ * - JWT token authentication
+ * - bcrypt password hashing
+ * - SQL injection protection (parameterized queries)
+ * - Role-based access control
+ * - CORS configuration
+ */
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -12,7 +34,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mindlink_secret_key_2025';
 
-// PostgreSQL connection using environment variables
+// PostgreSQL connection pool - използва environment variables за сигурност
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
@@ -21,12 +43,24 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'password'
 });
 
-// In-memory typing status storage
+// In-memory typing status storage - за real-time typing indicator
 const typingStatus = new Map();
 
 
 
-// Initialize database tables
+/**
+ * Initialize database tables
+ * Създава всички необходими таблици ако не съществуват
+ * 
+ * Таблици:
+ * - users: Потребители (user/therapist/admin)
+ * - messages: Съобщения между потребители
+ * - notes: Бележки от терапевти за пациенти
+ * - therapist_patients: Връзки терапевт-пациент
+ * - mood_entries: Записи за настроение
+ * - journal_entries: Дневникови записи
+ * - therapist_verifications: Заявки за верификация на терапевти
+ */
 const initDB = async () => {
   try {
     // Users table
@@ -171,7 +205,14 @@ if (require('fs').existsSync(path.join(__dirname, '../frontend/dist'))) {
     app.use(express.static(path.join(__dirname, '../frontend/dist')));
 }
 
-// Auth middleware
+/**
+ * Authentication middleware
+ * Проверява JWT token и добавя user информация към request
+ * 
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {Function} next - Next middleware function
+ */
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -184,12 +225,19 @@ const authenticateToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ message: 'Invalid token' });
         }
-        req.user = user;
+        req.user = user; // Добавяне на user информация към request
         next();
     });
 };
 
-// Admin middleware
+/**
+ * Admin middleware
+ * Проверява дали потребителят има admin роля
+ * 
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @param {Function} next - Next middleware function
+ */
 const requireAdmin = (req, res, next) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });

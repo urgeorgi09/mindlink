@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { BookOpenIcon, PencilIcon, MagnifyingGlassIcon, CheckCircleIcon, HeartIcon, StarIcon, ChatBubbleLeftRightIcon, DocumentTextIcon } from '../components/Icons';
 
+/**
+ * Journal Component
+ * 
+ * Цифров дневник за записване на мисли, чувства и преживявания.
+ * Поддържа категоризация, търсене и броене на думи.
+ * 
+ * Функционалност:
+ * - Създаване на нови записи с заглавие и съдържание
+ * - Категоризация (Личен, Благодарност, Цели, Размисли)
+ * - Търсене в записите по заглавие или съдържание
+ * - Автоматично броене на думи
+ * - Визуализация на записите с цветово кодиране по категория
+ * - Съхранение в база данни
+ */
 const Journal = () => {
+  // State за списъка със записи
   const [entries, setEntries] = useState([]);
+  // State за текущия запис (съдържание)
   const [currentEntry, setCurrentEntry] = useState("");
+  // State за заглавието на записа
   const [title, setTitle] = useState("");
+  // State за избраната категория
   const [category, setCategory] = useState("personal");
+  // State за търсене
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Дефиниция на категориите с икони и цветове
   const categories = [
     { value: "personal", label: "Личен", icon: PencilIcon, color: "#91c481" },
     { value: "gratitude", label: "Благодарност", icon: HeartIcon, color: "#7fb570" },
@@ -15,15 +35,20 @@ const Journal = () => {
     { value: "reflection", label: "Размисли", icon: ChatBubbleLeftRightIcon, color: "#569b5c" },
   ];
 
+  // Зареждане на записите при първоначално рендериране
   useEffect(() => {
     fetchEntries();
   }, []);
 
+  /**
+   * Fetch journal entries from API
+   * Извлича всички дневникови записи на текущия потребител от базата данни
+   */
   const fetchEntries = async () => {
     try {
       const token = localStorage.getItem("token");
       
-      // Decode JWT to see user ID
+      // Decode JWT to see user ID (за debugging)
       const payload = JSON.parse(atob(token.split('.')[1]));
       console.log("🔑 Current user ID:", payload.id);
       
@@ -46,13 +71,22 @@ const Journal = () => {
     }
   };
 
+  /**
+   * Handle form submission
+   * Запазва нов дневников запис в базата данни
+   * 
+   * @param {Event} e - Form submit event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Валидация - заглавие и съдържание са задължителни
     if (!title.trim() || !currentEntry.trim()) return;
 
     try {
       const token = localStorage.getItem("token");
       console.log("✍️ Saving journal entry:", { title, category, contentLength: currentEntry.length });
+      
+      // POST request към API за запазване на записа
       const response = await fetch("/api/journal/save", {
         method: "POST",
         headers: {
@@ -70,8 +104,10 @@ const Journal = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("✍️ Save response:", data);
+        // Изчистване на формата след успешно запазване
         setTitle("");
         setCurrentEntry("");
+        // Обновяване на списъка със записи
         fetchEntries();
       } else {
         const error = await response.json();
@@ -82,12 +118,23 @@ const Journal = () => {
     }
   };
 
+  /**
+   * Filter entries based on search term
+   * Филтрира записите по заглавие или съдържание
+   */
   const filteredEntries = entries.filter(
     (entry) =>
       entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  /**
+   * Get category information by value
+   * Връща информация за категория (икона, цвят, етикет)
+   * 
+   * @param {string} cat - Category value
+   * @returns {Object} Category info object
+   */
   const getCategoryInfo = (cat) => categories.find((c) => c.value === cat);
 
   return (

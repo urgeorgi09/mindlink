@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { ChartBarIcon, BoltIcon, ExclamationCircleIcon, CheckCircleIcon, FaceSmileIcon, FaceFrownIcon } from '../components/Icons';
 
+/**
+ * MoodTracker Component
+ * 
+ * Позволява на потребителите да проследяват ежедневното си настроение, енергия и тревожност.
+ * Данните се съхраняват в базата данни и се визуализират в история.
+ * 
+ * Функционалност:
+ * - Проследяване на настроение (1-10)
+ * - Проследяване на енергия (1-10)
+ * - Проследяване на тревожност (1-10)
+ * - Добавяне на бележки
+ * - Преглед на история на записите
+ */
 const MoodTracker = () => {
+  // State за текущите стойности на формата
   const [mood, setMood] = useState(5);
   const [energy, setEnergy] = useState(5);
   const [anxiety, setAnxiety] = useState(5);
   const [note, setNote] = useState("");
+  
+  // State за историята на записите
   const [entries, setEntries] = useState([]);
 
+  // Зареждане на записите при първоначално рендериране
   useEffect(() => {
     fetchEntries();
   }, []);
 
+  /**
+   * Fetch mood entries from API
+   * Извлича всички mood записи на текущия потребител от базата данни
+   */
   const fetchEntries = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -25,10 +46,19 @@ const MoodTracker = () => {
     }
   };
 
+  /**
+   * Handle form submission
+   * Запазва нов mood entry в базата данни
+   * 
+   * @param {Event} e - Form submit event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Извличане на JWT token за автентификация
       const token = localStorage.getItem('token');
+      
+      // POST request към API за запазване на mood entry
       const response = await fetch('/api/mood/save', {
         method: 'POST',
         headers: {
@@ -41,6 +71,7 @@ const MoodTracker = () => {
       const data = await response.json();
       
       if (response.ok) {
+        // Успешно запазване - изчистване на формата и обновяване на историята
         setNote("");
         fetchEntries();
       } else {
@@ -52,9 +83,16 @@ const MoodTracker = () => {
     }
   };
 
+  /**
+   * Get appropriate mood icon based on value
+   * Връща усмихната или тъжна икона в зависимост от стойността на настроението
+   * 
+   * @param {number} value - Mood value (1-10)
+   * @returns {Component} - Icon component
+   */
   const getMoodIcon = (value) => {
-    if (value <= 5) return FaceFrownIcon;
-    return FaceSmileIcon;
+    if (value <= 5) return FaceFrownIcon; // Тъжна икона за ниско настроение
+    return FaceSmileIcon; // Усмихната икона за високо настроение
   };
 
   return (

@@ -11,16 +11,44 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
+/**
+ * Analytics Component
+ * 
+ * Показва аналитика и статистики в зависимост от ролята на потребителя.
+ * 
+ * Роли:
+ * - User: Лична статистика (записи за настроение, дневник, средно настроение)
+ * - Therapist: Статистика на пациенти (общо пациенти, сесии, активни чатове)
+ * - Admin: Платформена аналитика (всички потребители, терапевти, активност)
+ * 
+ * Функционалност:
+ * - Динамично зареждане на статистики от API
+ * - Визуализация с икони и градиенти
+ * - Responsive design
+ * - Role-based content
+ */
 const Analytics = () => {
   const navigate = useNavigate();
   const { user } = useAnonymous();
+  // State за статистиките
   const [stats, setStats] = useState(null);
+  // State за loading състояние
   const [loading, setLoading] = useState(true);
 
+  // Зареждане на аналитика при първоначално рендериране или промяна на user
   useEffect(() => {
     loadAnalytics();
   }, [user]);
 
+  /**
+   * Load analytics data from API
+   * Извлича статистики от API в зависимост от ролята на потребителя
+   * 
+   * API връща различни данни за всяка роля:
+   * - User: moodEntries, journalEntries, averageMood
+   * - Therapist: totalPatients, sessionsThisMonth, activeChats
+   * - Admin: totalUsers, activeUsers, totalTherapists, moodEntries, etc.
+   */
   const loadAnalytics = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -30,10 +58,12 @@ const Analytics = () => {
         return;
       }
       
+      // API request за аналитика
       const response = await fetch('/api/analytics', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      // Проверка за автентификация
       if (response.status === 401 || response.status === 403) {
         console.log('Token invalid, redirecting to login');
         localStorage.removeItem('token');

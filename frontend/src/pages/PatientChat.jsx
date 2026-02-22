@@ -1,4 +1,19 @@
-// pages/PatientChat.js - с реален онлайн статус
+/**
+ * PatientChat Component
+ * 
+ * Чат интерфейс за пациенти за комуникация с терапевт.
+ * Поддържа real-time съобщения, typing indicator, емоджита и онлайн статус.
+ * 
+ * Функционалност:
+ * - Real-time съобщения (полинг на всеки 2 секунди)
+ * - Typing indicator ("пише...")
+ * - Emoji picker с 10 популярни емоджита
+ * - Важни съобщения (златиста рамка със звезда)
+ * - Онлайн статус на терапевта
+ * - Unread message counter
+ * - Auto-scroll до последното съобщение
+ * - Responsive design (мобилен и desktop)
+ */
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -9,26 +24,37 @@ import { UserGroupIcon, ArrowLeftIcon, ChatBubbleLeftRightIcon, StarIcon, FaceSm
 const PatientChat = () => {
   const { therapistId } = useParams();
   const navigate = useNavigate();
+  
+  // State за терапевта и съобщенията
   const [therapist, setTherapist] = useState(null);
   const [hasTherapist, setHasTherapist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
+  
+  // State за real-time features
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Refs за auto-scroll и typing timeout
   const messagesEndRef = React.useRef(null);
   const typingTimeoutRef = React.useRef(null);
   const messagesContainerRef = React.useRef(null);
   const prevMessagesLengthRef = React.useRef(0);
   const isMobile = window.innerWidth < 768;
 
-  // Реален онлайн статус
+  // Реален онлайн статус на терапевта (чрез custom hook)
   const therapistStatus = useUserStatus(therapist?.id);
 
+  // 10 популярни емоджита за бърз достъп
   const emojis = ["😊", "😢", "😰", "😡", "❤️", "👍", "🙏", "💪", "🌟", "✨"];
 
+  /**
+   * Auto-scroll to bottom of messages
+   * Автоматично скролва до последното съобщение при ново съобщение
+   */
   const scrollToBottom = () => {
     const container = messagesContainerRef.current;
     if (container) {
@@ -36,6 +62,7 @@ const PatientChat = () => {
     }
   };
 
+  // Auto-scroll когато се добавят нови съобщения
   useEffect(() => {
     if (messages.length > prevMessagesLengthRef.current) {
       prevMessagesLengthRef.current = messages.length;
@@ -43,13 +70,18 @@ const PatientChat = () => {
     }
   }, [messages]);
 
+  // Инициализация - проверка за терапевт и unread count
   useEffect(() => {
     checkTherapist();
     loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 5000);
+    const interval = setInterval(loadUnreadCount, 5000); // Проверка на всеки 5 секунди
     return () => clearInterval(interval);
   }, []);
 
+  /**
+   * Load unread message count
+   * Извлича броя непрочетени съобщения за показване на badge
+   */
   const loadUnreadCount = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -102,8 +134,12 @@ const PatientChat = () => {
     }
   };
 
+  /**
+   * Send message to therapist
+   * Изпраща съобщение към терапевта чрез API
+   */
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim()) return; // Не изпращай празни съобщения
 
     try {
       const token = localStorage.getItem("token");
@@ -129,6 +165,12 @@ const PatientChat = () => {
     }
   };
 
+  /**
+   * Send typing status to server
+   * Изпраща typing indicator към сървъра за real-time "пише..." индикатор
+   * 
+   * @param {boolean} typing - True ако потребителят пише, false ако е спрял
+   */
   const sendTypingStatus = async (typing) => {
     if (!therapist) return;
     try {
@@ -146,6 +188,13 @@ const PatientChat = () => {
     }
   };
 
+  /**
+   * Handle typing in input field
+   * Обработва писането в input field и изпраща typing indicator
+   * Използва timeout за да спре typing indicator след 1 секунда без писане
+   * 
+   * @param {Event} e - Input change event
+   */
   const handleTyping = (e) => {
     const value = e.target.value;
     setNewMessage(value);
@@ -162,6 +211,11 @@ const PatientChat = () => {
     }
   };
 
+  /**
+   * Load messages from API
+   * Извлича всички съобщения между пациента и терапевта
+   * Автоматично маркира съобщенията като прочетени
+   */
   const loadMessages = async () => {
     if (!therapist || !currentUserId) return;
 
@@ -192,6 +246,7 @@ const PatientChat = () => {
     }
   };
 
+  // Real-time polling на съобщенията на всеки 2 секунди
   useEffect(() => {
     if (hasTherapist && therapist && currentUserId) {
       loadMessages();

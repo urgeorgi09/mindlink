@@ -49,7 +49,7 @@ const Home = () => {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f8f4 0%, #e8f5ee 50%, #e0f2e9 100%)',
+        background: 'linear-gradient(135deg, #f5faf7 0%, #eef7f2 50%, #e8f4ed 100%)',
         overflow: 'hidden',
         position: 'relative'
       }}>
@@ -196,36 +196,44 @@ const Home = () => {
                 alignItems: 'center',
                 gap: '6px'
               }}>
-                <SparklesIcon style={{ width: '16px', height: '16px' }} />
-                Вашето психично здраве е важно
+                🇧🇬 Създадено в България
               </span>
             </div>
 
             <h1 style={{ 
-              fontSize: isMobile ? '36px' : '72px', 
-              color: '#1e293b', 
+              fontSize: isMobile ? '32px' : '48px', 
+              color: '#2d3748', 
               marginBottom: '24px', 
-              fontWeight: '800',
-              lineHeight: '1.1',
-              letterSpacing: isMobile ? '-1px' : '-2px',
-              background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              fontWeight: '500',
+              lineHeight: '1.3',
+              letterSpacing: '-0.02em',
+              padding: isMobile ? '0 20px' : '0',
+              fontFamily: 'Poppins, sans-serif'
             }}>
-              Модерна платформа<br />за психично здраве
+              Не всеки може да си позволи терапия.
+              <br />
+              <span style={{
+                color: '#5fa777',
+                fontWeight: '600'
+              }}>
+                Но всеки заслужава подкрепа.
+              </span>
             </h1>
             
             <p style={{ 
-              fontSize: isMobile ? '16px' : '22px', 
-              color: '#64748b', 
+              fontSize: isMobile ? '17px' : '19px', 
+              color: '#5a6c7d', 
               marginBottom: '48px',
               maxWidth: '700px',
               margin: '0 auto 48px',
-              lineHeight: '1.6',
-              padding: isMobile ? '0 20px' : '0'
+              lineHeight: '1.7',
+              padding: isMobile ? '0 20px' : '0',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '400'
             }}>
-              Професионална терапия, проследяване на настроението и персонализирана подкрепа — всичко на едно място
+              Безплатна платформа за проследяване на настроението, дневник и достъп до български терапевти.
+              <br />
+              Сигурно. Анонимно. Винаги достъпно.
             </p>
 
             <div style={{ 
@@ -240,71 +248,73 @@ const Home = () => {
               <button 
                 onClick={() => navigate('/register')} 
                 style={{ 
-                  padding: isMobile ? '16px 40px' : '18px 48px', 
-                  fontSize: isMobile ? '16px' : '18px', 
-                  background: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)', 
+                  padding: isMobile ? '14px 32px' : '14px 32px', 
+                  fontSize: isMobile ? '16px' : '17px', 
+                  background: '#5fa777', 
                   color: 'white', 
                   border: 'none', 
-                  borderRadius: '14px', 
+                  borderRadius: '10px', 
                   cursor: 'pointer', 
-                  fontWeight: '700',
-                  boxShadow: '0 12px 40px rgba(109, 166, 95, 0.5)',
+                  fontWeight: '500',
+                  boxShadow: '0 2px 12px rgba(95, 167, 119, 0.25)',
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '8px',
                   width: isMobile ? '100%' : 'auto',
                   maxWidth: isMobile ? '400px' : 'none',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  fontFamily: 'Inter, sans-serif'
                 }}
                 onMouseEnter={(e) => {
                   if (!isMobile) {
-                    e.target.style.transform = 'translateY(-3px)';
-                    e.target.style.boxShadow = '0 16px 48px rgba(109, 166, 95, 0.7)';
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 4px 16px rgba(95, 167, 119, 0.3)';
+                    e.target.style.background = '#52956a';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isMobile) {
                     e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 12px 40px rgba(109, 166, 95, 0.5)';
+                    e.target.style.boxShadow = '0 2px 12px rgba(95, 167, 119, 0.25)';
+                    e.target.style.background = '#5fa777';
                   }
                 }}
               >
-                Регистрирайте се сега
-                <ArrowRightIcon style={{ width: '20px', height: '20px' }} />
+                Започни безплатно
               </button>
               
               <button 
                 onClick={() => navigate('/login')} 
                 style={{ 
-                  padding: isMobile ? '16px 40px' : '18px 48px', 
-                  fontSize: isMobile ? '16px' : '18px', 
-                  background: 'white', 
-                  color: '#6da65f', 
+                  padding: isMobile ? '14px 32px' : '14px 32px', 
+                  fontSize: isMobile ? '16px' : '17px', 
+                  background: 'transparent', 
+                  color: '#5fa777', 
                   border: '2px solid #d4edda', 
-                  borderRadius: '14px', 
+                  borderRadius: '10px', 
                   cursor: 'pointer', 
-                  fontWeight: '600',
-                  boxShadow: '0 4px 16px rgba(109, 166, 95, 0.1)',
+                  fontWeight: '500',
                   transition: 'all 0.3s ease',
                   width: isMobile ? '100%' : 'auto',
                   maxWidth: isMobile ? '400px' : 'none',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  fontFamily: 'Inter, sans-serif'
                 }}
                 onMouseEnter={(e) => {
                   if (!isMobile) {
-                    e.target.style.background = '#f0f9f4';
-                    e.target.style.borderColor = '#6da65f';
+                    e.target.style.background = 'rgba(95, 167, 119, 0.05)';
+                    e.target.style.borderColor = '#5fa777';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isMobile) {
-                    e.target.style.background = 'white';
+                    e.target.style.background = 'transparent';
                     e.target.style.borderColor = '#d4edda';
                   }
                 }}
               >
-                Вече имате акаунт?
+                Как работи
               </button>
             </div>
 
@@ -312,24 +322,25 @@ const Home = () => {
             <div style={{ 
               display: 'flex', 
               justifyContent: 'center', 
-              gap: isMobile ? '20px' : '40px', 
-              marginTop: '60px',
-              color: '#64748b',
-              fontSize: isMobile ? '12px' : '14px',
+              gap: isMobile ? '20px' : '32px', 
+              marginTop: '48px',
+              color: '#666',
+              fontSize: isMobile ? '13px' : '14px',
               flexWrap: 'wrap',
-              padding: isMobile ? '0 20px' : '0'
+              padding: isMobile ? '0 20px' : '0',
+              fontWeight: '500'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircleIcon style={{ width: '20px', height: '20px', color: '#6da65f' }} />
-                <span>100% поверително</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '20px' }}>🔒</span>
+                <span>GDPR защита</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <LockClosedIcon style={{ width: '20px', height: '20px', color: '#6da65f' }} />
-                <span>Криптирани данни</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '20px' }}>💚</span>
+                <span>Вече 47 българи</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <StarIcon style={{ width: '20px', height: '20px', color: '#6da65f' }} />
-                <span>Лицензирани терапевти</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '20px' }}>🇧🇬</span>
+                <span>Български терапевти</span>
               </div>
             </div>
           </div>
@@ -351,25 +362,25 @@ const Home = () => {
               {
                 icon: HeartIcon,
                 title: 'Проследяване на настроението',
-                description: 'Ежедневно проследяване и визуализация на вашето емоционално състояние с AI анализ',
+                description: 'Запиши как се чувстваш всеки ден и виж тенденциите във времето',
                 gradient: 'linear-gradient(135deg, #91c481 0%, #7fb570 50%, #6da65f 100%)'
               },
               {
                 icon: ChatBubbleLeftRightIcon,
-                title: 'Връзка с терапевт',
-                description: 'Директна комуникация с професионални лицензирани терапевти 24/7',
+                title: 'Чат с терапевт',
+                description: 'Свържи се с български психолози когато имаш нужда',
                 gradient: 'linear-gradient(135deg, #a8d99c 0%, #91c481 50%, #7fb570 100%)'
               },
               {
                 icon: ChartBarIcon,
-                title: 'Детайлна аналитика',
-                description: 'Визуализация на прогреса, тенденции и персонализирани препоръки',
+                title: 'Твоят прогрес',
+                description: 'Виж как се подобряваш с лесни за разбиране графики',
                 gradient: 'linear-gradient(135deg, #7fb570 0%, #6da65f 50%, #5b964e 100%)'
               },
               {
                 icon: ShieldCheckIcon,
-                title: 'Пълна поверителност',
-                description: 'End-to-end криптиране и пълен контрол над вашите лични данни',
+                title: 'Твоите данни са сигурни',
+                description: 'Пълна поверителност и контрол над твоята информация',
                 gradient: 'linear-gradient(135deg, #c4e3ba 0%, #a8d99c 50%, #91c481 100%)'
               }
             ].map((feature, index) => (
@@ -456,10 +467,10 @@ const Home = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent'
                 }}>
-                  10,000+
+                  🇧🇬
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
-                  Активни потребители
+                  Създадено в България
                 </div>
               </div>
               <div>
@@ -472,10 +483,10 @@ const Home = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent'
                 }}>
-                  500+
+                  🔒
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
-                  Лицензирани терапевти
+                  GDPR съответствие
                 </div>
               </div>
               <div>
@@ -488,10 +499,10 @@ const Home = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent'
                 }}>
-                  98%
+                  💚
                 </div>
                 <div style={{ color: '#64748b', fontSize: isMobile ? '14px' : '16px' }}>
-                  Удовлетвореност
+                  Безплатно за всички
                 </div>
               </div>
             </div>
@@ -510,13 +521,15 @@ const Home = () => {
             margin: isMobile ? '0 20px' : '0'
           }}>
             <h2 style={{ 
-              fontSize: isMobile ? '32px' : '42px', 
+              fontSize: isMobile ? '28px' : '38px', 
               color: 'white', 
               marginBottom: '20px',
-              fontWeight: '800',
-              lineHeight: '1.2'
+              fontWeight: '600',
+              lineHeight: '1.3'
             }}>
-              Готови ли сте да започнете?
+              Не си сам.
+              <br />
+              Започни днес.
             </h2>
             <p style={{ 
               fontSize: isMobile ? '16px' : '18px', 
@@ -526,19 +539,19 @@ const Home = () => {
               margin: '0 auto 40px',
               lineHeight: '1.6'
             }}>
-              Присъединете се към хиляди хора, които вече подобряват психичното си здраве
+              Безплатно. Анонимно. Без задължения.
             </p>
             <button 
               onClick={() => navigate('/register')} 
               style={{ 
-                padding: isMobile ? '16px 40px' : '18px 48px', 
+                padding: isMobile ? '14px 32px' : '16px 40px', 
                 fontSize: isMobile ? '16px' : '18px', 
                 background: 'white', 
                 color: '#6da65f', 
                 border: 'none', 
-                borderRadius: '14px', 
+                borderRadius: '12px', 
                 cursor: 'pointer', 
-                fontWeight: '700',
+                fontWeight: '600',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.3s ease',
                 width: isMobile ? '100%' : 'auto',
@@ -546,7 +559,7 @@ const Home = () => {
               }}
               onMouseEnter={(e) => {
                 if (!isMobile) {
-                  e.target.style.transform = 'translateY(-3px)';
+                  e.target.style.transform = 'translateY(-2px)';
                   e.target.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.25)';
                 }
               }}
@@ -557,7 +570,7 @@ const Home = () => {
                 }
               }}
             >
-              Създайте безплатен акаунт
+              Започни безплатно
             </button>
           </div>
         </div>
