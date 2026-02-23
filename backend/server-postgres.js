@@ -593,7 +593,7 @@ app.get('/api/patient/therapists', authenticateToken, async (req, res) => {
         }
         
         const result = await pool.query(
-            `SELECT u.id, u.name, u.specialty, u.experience, u.description, u.phone, u.education, u.profile_image 
+            `SELECT u.id, u.name, u.specialty, u.experience, u.description, u.phone, u.education, u.profile_image, u.session_price, u.verified 
              FROM users u 
              JOIN therapist_patients tp ON u.id = tp.therapist_id 
              WHERE tp.patient_id = $1 AND u.role = 'therapist'`,
