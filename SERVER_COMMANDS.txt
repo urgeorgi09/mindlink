@@ -1,0 +1,28 @@
+# Команди за изпълнение на production сървъра
+
+# 1. Спри всички контейнери
+docker-compose down
+
+# 2. Изтрий стари мрежи
+docker network prune -f
+
+# 3. Pull последните промени
+git pull origin main
+
+# 4. Rebuild и рестартирай
+docker-compose up -d --build
+
+# 5. Провери статуса
+docker-compose ps
+
+# 6. Провери логовете
+docker logs mindlink-backend --tail 50
+
+# 7. Тествай database connection
+docker exec mindlink-backend sh -c "nc -zv mindlink-db 5432"
+
+# 8. Ако има проблем, рестартирай само backend
+docker-compose restart backend
+
+# 9. Провери дали базата работи
+docker exec mindlink-db psql -U postgres -d mindlink -c "SELECT COUNT(*) FROM users;"

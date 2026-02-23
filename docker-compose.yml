@@ -12,6 +12,8 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - mindlink-network
     command: postgres -c 'max_connections=200'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d mindlink"]
@@ -33,6 +35,8 @@ services:
       - DB_PASSWORD=050310
       - PORT=5000
       - JWT_SECRET=Ivet_is_the_best_12034
+    networks:
+      - mindlink-network
     depends_on:
       mindlink-db:
         condition: service_healthy
@@ -44,6 +48,8 @@ services:
     container_name: mindlink-frontend
     ports:
       - "3000:80"
+    networks:
+      - mindlink-network
     depends_on:
       - backend
     restart: unless-stopped
@@ -63,6 +69,8 @@ services:
       - DB_PASSWORD=050310
       - JWT_SECRET=mindlink_admin_secret_2025
       - MAIN_BACKEND_URL=http://backend:5000
+    networks:
+      - mindlink-network
     depends_on:
       mindlink-db:
         condition: service_healthy
@@ -76,9 +84,15 @@ services:
       - "5175:80"
     environment:
       - VITE_API_URL=http://localhost:5001
+    networks:
+      - mindlink-network
     depends_on:
       - admin-backend
     restart: unless-stopped
 
 volumes:
   pgdata:
+
+networks:
+  mindlink-network:
+    driver: bridge
